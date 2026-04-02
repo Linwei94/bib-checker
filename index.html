@@ -315,8 +315,8 @@ header h1 { font-size: 1rem; font-weight: 700; }
         <div class="entry-info" id="entry-info"></div>
 
         <div class="btn-row">
-          <button class="btn btn-scholar"  onclick="openSearch('scholar')"  data-i18n="btn-scholar">🔍 Google Scholar</button>
-          <button class="btn btn-semantic" onclick="openSearch('semantic')" data-i18n="btn-semantic">📖 Semantic Scholar</button>
+          <button class="btn btn-scholar"  onclick="openDirect('scholar')"  data-i18n="btn-scholar">🔍 Google Scholar</button>
+          <button class="btn btn-semantic" onclick="openDirect('semantic')" data-i18n="btn-semantic">📖 Semantic Scholar</button>
         </div>
 
         <div>
@@ -828,6 +828,12 @@ function getSearchUrl(service) {
   return service === 'scholar'
     ? `https://scholar.google.com/scholar?q=${q}`
     : `https://www.semanticscholar.org/search?q=${q}&sort=Relevance`;
+}
+
+function openDirect(service) {
+  if (currentIdx < 0) return;
+  const url = getSearchUrl(service);
+  window.open(url, '_blank');
 }
 
 function openSearch(service) {
