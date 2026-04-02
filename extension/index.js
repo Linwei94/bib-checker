@@ -17,6 +17,7 @@ let undoHistory = [];
 let batchRunning  = false;
 let batchQueue    = [];   // indices to fetch
 let batchPos      = 0;
+let fetchTimeoutId = null;  // safety timeout for hung Scholar tab
 
 let fetchDelay = parseInt(localStorage.getItem('bib-fetch-delay') || '3');
 
@@ -421,12 +422,19 @@ function fetchNext() {
 
   const url = `https://scholar.google.com/scholar?q=${encodeURIComponent(e.title)}&bib-checker=1&bib-delay=${fetchDelay}`;
   try {
-    chrome.runtime.sendMessage({ type: 'bib-ext-open-scholar', url }, () => {
-      if (chrome.runtime.lastError) {
-        markFetchError(idx, '扩展通信失败');
+    chrome.runtime.sendMessage({ type: 'bib-ext-open-scholar', url }, (resp) => {
+      if (chrome.runtime.lastError || !resp?.ok) {
+        markFetchError(idx, '无法连接扩展后台，请确认扩展已加载');
         return;
       }
       setBatchSteps(2);
+      // Safety timeout: if Scholar tab hangs (captcha, no results, etc.) advance after 60s
+      clearTimeout(fetchTimeoutId);
+      fetchTimeoutId = setTimeout(() => {
+        if (batchRunning && batchQueue[batchPos] === idx && entries[idx].fetchStatus === 'fetching') {
+          markFetchError(idx, '超时：Scholar 页面未响应（可能遇到人机验证）');
+        }
+      }, 60000);
     });
   } catch (err) {
     markFetchError(idx, '无法连接扩展后台');
@@ -434,6 +442,7 @@ function fetchNext() {
 }
 
 function markFetchError(idx, msg) {
+  clearTimeout(fetchTimeoutId);
   const e = entries[idx];
   e.fetchStatus = 'error';
   e.fetchError = msg;
@@ -448,6 +457,7 @@ function storeFetchResult(bib) {
   if (!batchRunning && batchQueue.length === 0) return;
   const idx = batchQueue[batchPos];
   if (idx === undefined) return;
+  clearTimeout(fetchTimeoutId);
   const e = entries[idx];
 
   e.fetchResult = bib;
@@ -503,6 +513,13 @@ try { chrome.runtime.onMessage.addListener((msg) => {
     if (!msg.bib) return;
     setBatchSteps(4);
     setTimeout(() => storeFetchResult(msg.bib), 100);
+    return;
+  }
+  if (msg.type === 'bib-error') {
+    const idx = batchQueue[batchPos];
+    if (idx !== undefined && entries[idx]?.fetchStatus === 'fetching') {
+      markFetchError(idx, msg.error || '获取失败');
+    }
   }
 }); } catch (e) { console.warn('chrome.runtime not available:', e); }
 

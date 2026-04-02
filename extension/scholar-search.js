@@ -80,7 +80,11 @@ async function run() {
     await wait(500);
   }
   if (cancelled) return;
-  if (!cite) { setMsg('❌ 未找到 Cite 按钮'); return; }
+  if (!cite) {
+    setMsg('❌ 未找到 Cite 按钮');
+    chrome.runtime.sendMessage({ type: 'bib-error', error: '未找到 Cite 按钮（可能需要人机验证）' });
+    return;
+  }
 
   cite.classList.add('bib-highlight');
   cite.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -103,7 +107,11 @@ async function run() {
     await wait(400);
   }
   if (cancelled) return;
-  if (!bib) { setMsg('❌ 未找到 BibTeX 链接'); return; }
+  if (!bib) {
+    setMsg('❌ 未找到 BibTeX 链接');
+    chrome.runtime.sendMessage({ type: 'bib-error', error: '未找到 BibTeX 链接' });
+    return;
+  }
 
   bib.classList.add('bib-highlight');
   chrome.runtime.sendMessage({ type: 'scholar-progress', step: 3 });

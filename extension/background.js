@@ -31,6 +31,14 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.type === 'bib-ext-open-scholar') {
     bibCheckerTabId = sender.tab?.id ?? bibCheckerTabId;
     chrome.tabs.create({ url: msg.url });
+    sendResponse({ ok: true });  // must respond or Chrome fires lastError in caller
+    return false;
+  }
+
+  // Scholar content script reports a fetch error — relay to checker tab, then close Scholar tab
+  if (msg.type === 'bib-error') {
+    if (bibCheckerTabId != null) chrome.tabs.sendMessage(bibCheckerTabId, msg);
+    if (sender.tab?.id) setTimeout(() => chrome.tabs.remove(sender.tab.id), 1500);
     return false;
   }
 
