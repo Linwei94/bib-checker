@@ -1192,7 +1192,15 @@ window.addEventListener('message', (e) => {
   document.getElementById('new-bib').value = bib;
   updateDiffView();
   setFetchStatus('ok', lang === 'zh' ? '✅ 已从 Google Scholar 获取' : '✅ Received from Google Scholar');
+  closeScholarWindow();
 });
+
+function closeScholarWindow() {
+  if (_sideWindow && !_sideWindow.closed) {
+    _sideWindow.close();
+    _sideWindow = null;
+  }
+}
 
 document.addEventListener('keydown', e => {
   if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
@@ -1227,6 +1235,7 @@ document.addEventListener('paste', (e) => {
   if (isCompleteBib(text)) {
     document.getElementById('new-bib').value = text;
     updateDiffView();
+    closeScholarWindow();
     e.preventDefault();
   }
 });
