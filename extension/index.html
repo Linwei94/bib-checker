@@ -18,7 +18,7 @@ body {
   font-size: 13px;
 }
 
-/* ── Header ─────────────────────────────────────────────────── */
+/* ── Header ─────────────────────────────────────────────── */
 header {
   background: linear-gradient(135deg, #1e40af, #2563eb);
   color: white;
@@ -36,9 +36,9 @@ header {
   border-radius: 20px; padding: 2px 9px; font-size: 11px; font-weight: 700;
   background: rgba(255,255,255,.18);
 }
-.stat-chip.pending  { color: #fde68a; }
-.stat-chip.ok       { color: #6ee7b7; }
-.stat-chip.replaced { color: #bfdbfe; }
+.stat-chip.s-pending  { color: #fde68a; }
+.stat-chip.s-diff     { color: #fed7aa; }
+.stat-chip.s-done     { color: #6ee7b7; }
 .hdr-r { margin-left: auto; display: flex; gap: 6px; }
 .btn-hdr {
   background: rgba(255,255,255,.18); color: white;
@@ -49,12 +49,12 @@ header {
 .btn-hdr:hover { background: rgba(255,255,255,.3); }
 .btn-hdr:disabled { opacity: .4; cursor: not-allowed; }
 
-/* ── Main ───────────────────────────────────────────────────── */
+/* ── Main ───────────────────────────────────────────────── */
 .main { display: flex; flex: 1; overflow: hidden; }
 
-/* ── Left: BibTeX editor ─────────────────────────────────────── */
+/* ── Left: BibTeX editor ───────────────────────────────── */
 .left {
-  width: 38%; display: flex; flex-direction: column;
+  width: 36%; display: flex; flex-direction: column;
   border-right: 2px solid #e2e8f0;
   flex-shrink: 0;
   background: #1e2d3e;
@@ -85,212 +85,232 @@ header {
 #bib-textarea::placeholder { color: #334155; }
 #bib-textarea::selection { background: #1e40af; }
 
-/* ── Right: workflow ─────────────────────────────────────────── */
+/* ── Right: workflow ────────────────────────────────────── */
 .right { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow: hidden; background: #f0f4f8; }
 
-/* Entry list */
+/* ── Entry list ─────────────────────────────────────────── */
 .entry-list-wrap {
   background: white;
-  border-bottom: 2px solid #e2e8f0;
-  max-height: 200px; overflow-y: auto; flex-shrink: 0;
+  border-bottom: 1px solid #e2e8f0;
+  max-height: 185px; overflow-y: auto; flex-shrink: 0;
 }
 .entry-list-wrap::-webkit-scrollbar { width: 4px; }
 .entry-list-wrap::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 2px; }
-
 .list-empty { padding: 14px; text-align: center; font-size: 12px; color: #94a3b8; font-style: italic; }
 
 .entry-row {
   display: flex; align-items: center; gap: 8px;
-  padding: 6px 12px; cursor: pointer;
+  padding: 5px 12px; cursor: pointer;
   border-bottom: 1px solid #f1f5f9;
   transition: background .1s;
 }
 .entry-row:last-child { border-bottom: none; }
 .entry-row:hover { background: #f8fafc; }
 .entry-row.active { background: #eff6ff; border-left: 3px solid #3b82f6; padding-left: 9px; }
-.entry-badge { font-size: 13px; flex-shrink: 0; cursor: pointer; transition: transform .1s; user-select: none; }
-.entry-badge:hover { transform: scale(1.3); }
+.entry-status { font-size: 12px; flex-shrink: 0; width: 16px; text-align: center; }
 .entry-key { font-family: monospace; font-size: 10.5px; color: #94a3b8; width: 120px; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .entry-ttl { font-size: 12px; color: #475569; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
 .entry-row.active .entry-key { color: #3b82f6; }
 .entry-row.active .entry-ttl { color: #1e40af; font-weight: 500; }
-
-/* Workflow scroll */
-.workflow-scroll {
-  flex: 1; overflow-y: auto; padding: 12px;
-  display: flex; flex-direction: column; gap: 10px;
-}
-.workflow-scroll::-webkit-scrollbar { width: 4px; }
-.workflow-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 2px; }
-
-.no-entry-msg {
-  flex: 1; display: flex; align-items: center; justify-content: center;
-  color: #cbd5e1; font-style: italic; font-size: 13px;
-}
-
-#active-workflow { display: none; flex-direction: column; gap: 10px; }
-
-/* ── Entry card ──────────────────────────────────────────────── */
-.entry-card {
-  background: white; border-radius: 8px; padding: 11px 14px;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 1px 3px rgba(0,0,0,.06);
-}
-.ec-title { font-size: 13px; font-weight: 600; color: #0f172a; line-height: 1.4; margin-bottom: 5px; }
-.ec-meta  { font-size: 11px; color: #64748b; line-height: 1.7; }
-.ec-meta code { background: #f1f5f9; border-radius: 3px; padding: 1px 5px; font-size: 10.5px; color: #2563eb; }
-
-/* ── Pipeline card ──────────────────────────────────────────── */
-.pipeline-card {
-  background: white; border-radius: 8px; padding: 14px;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 1px 3px rgba(0,0,0,.06);
-}
-.pc-top {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 18px;
-}
-.pc-label { font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: .07em; }
-.delay-row { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #94a3b8; }
-.delay-row select {
-  background: #f8fafc; color: #475569; border: 1px solid #e2e8f0;
-  border-radius: 4px; padding: 2px 6px; font-size: 11px; cursor: pointer; outline: none;
-}
-.delay-row select:focus { border-color: #3b82f6; }
-
-/* Steps track */
-.steps-track {
-  position: relative;
-  display: flex; align-items: flex-start;
-  margin-bottom: 18px;
-}
-.steps-track::before {
-  content: '';
-  position: absolute;
-  top: 16px; left: 16px; right: 16px;
-  height: 2px;
-  background: #e2e8f0;
-  z-index: 0;
-}
-
-.step {
-  flex: 1; display: flex; flex-direction: column; align-items: center;
-  gap: 6px; position: relative; z-index: 1;
-}
-
-.step-dot {
-  width: 32px; height: 32px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  border: 2px solid #e2e8f0;
-  background: white;
-  font-size: 12px; font-weight: 700; color: #cbd5e1;
-  transition: all .35s;
-}
-.step.active .step-dot {
-  border-color: #3b82f6; background: #eff6ff; color: #3b82f6;
-  box-shadow: 0 0 0 5px rgba(59,130,246,.12);
-  animation: pulse .9s ease-in-out infinite;
-}
-.step.done .step-dot {
-  border-color: #10b981; background: #ecfdf5; color: #10b981;
-  box-shadow: none;
-}
-@keyframes pulse {
-  0%,100% { box-shadow: 0 0 0 4px rgba(59,130,246,.15); }
-  50%      { box-shadow: 0 0 0 8px rgba(59,130,246,.04); }
-}
-
-.step-lbl {
-  font-size: 9.5px; text-align: center; line-height: 1.35;
-  color: #cbd5e1; white-space: nowrap;
-  transition: color .3s;
-}
-.step.active .step-lbl { color: #3b82f6; font-weight: 600; }
-.step.done   .step-lbl { color: #10b981; font-weight: 600; }
-
 @keyframes spin { to { transform: rotate(360deg); } }
-.step-spinner {
-  width: 14px; height: 14px;
+.entry-spin {
+  display: inline-block; width: 10px; height: 10px;
   border: 2px solid #3b82f6; border-top-color: transparent;
   border-radius: 50%; animation: spin .6s linear infinite;
 }
 
-/* connector fill when done */
-.step-connector {
-  position: absolute;
-  top: 16px; left: 50%; right: -50%;
-  height: 2px; background: #10b981;
-  transform-origin: left;
-  transform: scaleX(0);
-  transition: transform .35s;
-  z-index: 0;
+/* ── Fetch control bar ──────────────────────────────────── */
+.fetch-bar {
+  display: none;
+  align-items: center; gap: 8px;
+  padding: 6px 12px;
+  background: white;
+  border-bottom: 2px solid #e2e8f0;
+  flex-shrink: 0;
 }
-.step.done .step-connector { transform: scaleX(1); }
-
-/* Start button */
-.btn-start {
-  width: 100%; padding: 11px;
+.btn-batch {
   background: linear-gradient(135deg, #1d4ed8, #7c3aed);
-  color: white; border: none; border-radius: 7px;
-  font-size: 13px; font-weight: 700; cursor: pointer;
-  letter-spacing: .02em;
-  transition: opacity .15s, transform .1s;
-  box-shadow: 0 2px 8px rgba(29,78,216,.3);
+  color: white; border: none; border-radius: 6px;
+  padding: 5px 14px; font-size: 12px; font-weight: 700; cursor: pointer;
+  white-space: nowrap; transition: opacity .15s;
+  box-shadow: 0 1px 6px rgba(29,78,216,.3);
 }
-.btn-start:hover { opacity: .88; }
-.btn-start:active { transform: scale(.98); }
-.btn-start:disabled { opacity: .4; cursor: not-allowed; box-shadow: none; }
+.btn-batch:hover { opacity: .88; }
+.btn-batch:disabled { opacity: .4; cursor: not-allowed; }
+.btn-stop {
+  background: #ef4444; color: white; border: none; border-radius: 6px;
+  padding: 5px 12px; font-size: 12px; font-weight: 700; cursor: pointer;
+  white-space: nowrap; transition: opacity .15s;
+}
+.btn-stop:hover { opacity: .85; }
+.batch-progress { font-size: 11px; color: #64748b; white-space: nowrap; }
+.batch-steps { display: flex; align-items: center; gap: 3px; margin-left: 4px; }
+.bs-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #e2e8f0; transition: background .25s; flex-shrink: 0;
+}
+.bs-dot.active { background: #3b82f6; animation: bspulse .8s ease-in-out infinite; }
+.bs-dot.done   { background: #10b981; }
+@keyframes bspulse {
+  0%,100% { opacity: 1; } 50% { opacity: .4; }
+}
+.bs-arrow { font-size: 9px; color: #e2e8f0; }
+.delay-wrap { margin-left: auto; display: flex; align-items: center; gap: 5px; font-size: 11px; color: #94a3b8; white-space: nowrap; }
+.delay-wrap select {
+  background: #f8fafc; color: #475569; border: 1px solid #e2e8f0;
+  border-radius: 4px; padding: 2px 5px; font-size: 11px; cursor: pointer; outline: none;
+}
+.delay-wrap select:focus { border-color: #3b82f6; }
 
-/* Status line */
-.status-line {
-  margin-top: 9px; min-height: 16px;
-  font-size: 11.5px; color: #3b82f6;
-  display: flex; align-items: center; gap: 6px;
+/* ── Review area ────────────────────────────────────────── */
+.review-area {
+  flex: 1; overflow: hidden; display: flex; flex-direction: column;
 }
-.status-line.ok    { color: #059669; }
-.status-line.warn  { color: #d97706; }
-.status-line.error { color: #dc2626; }
-.spinner {
-  display: inline-block; width: 11px; height: 11px;
-  border: 2px solid currentColor; border-top-color: transparent;
+
+.no-sel-msg {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  color: #cbd5e1; font-style: italic; font-size: 13px;
+}
+
+/* Entry info card (shown while pending/fetching) */
+.entry-info {
+  display: none; flex-direction: column; gap: 8px;
+  padding: 12px; overflow-y: auto; flex: 1;
+}
+.einfo-card {
+  background: white; border-radius: 8px; padding: 11px 14px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0,0,0,.06);
+}
+.einfo-title { font-size: 13px; font-weight: 600; color: #0f172a; line-height: 1.4; margin-bottom: 5px; }
+.einfo-meta  { font-size: 11px; color: #64748b; line-height: 1.9; }
+.einfo-meta code { background: #f1f5f9; border-radius: 3px; padding: 1px 5px; font-size: 10.5px; color: #2563eb; }
+.fetch-state-msg {
+  background: white; border-radius: 8px; padding: 14px 16px;
+  border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,.06);
+  font-size: 12.5px; color: #64748b;
+  display: flex; align-items: center; gap: 8px;
+}
+.fetch-state-msg.error { color: #dc2626; border-color: #fecaca; background: #fff1f2; }
+.inline-spin {
+  display: inline-block; width: 12px; height: 12px;
+  border: 2px solid #3b82f6; border-top-color: transparent;
   border-radius: 50%; animation: spin .6s linear infinite; flex-shrink: 0;
 }
 
-/* ── Actions card ───────────────────────────────────────────── */
-.actions-card {
-  background: white; border-radius: 8px; padding: 12px 14px;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 1px 3px rgba(0,0,0,.06);
-  display: flex; flex-direction: column; gap: 9px;
+/* ── Diff panel ─────────────────────────────────────────── */
+#diff-panel {
+  display: none; flex-direction: column; flex: 1; overflow: hidden;
 }
-.keep-key-row {
-  display: flex; align-items: center; gap: 6px;
-  font-size: 11px; color: #64748b;
-}
-.keep-key-row input[type=checkbox] { accent-color: #3b82f6; cursor: pointer; }
-.keep-key-row label { cursor: pointer; }
-.keep-key-row code { background: #f1f5f9; border-radius: 3px; padding: 1px 5px; font-size: 10.5px; color: #2563eb; }
 
-.action-row { display: flex; gap: 7px; }
-.btn-action {
-  flex: 1; padding: 9px; border: none; border-radius: 6px;
-  font-size: 13px; font-weight: 700; cursor: pointer; transition: opacity .15s;
+.diff-topbar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 12px;
+  background: white;
+  border-bottom: 1px solid #e2e8f0;
+  flex-shrink: 0;
 }
-.btn-action:hover { opacity: .85; }
-.btn-replace { background: #059669; color: white; box-shadow: 0 1px 4px rgba(5,150,105,.3); }
-.btn-keep    { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
-
-.nav-row { display: flex; align-items: center; gap: 6px; }
-.btn-nav {
+.diff-entry-key {
+  font-family: monospace; font-size: 11px;
+  background: #eff6ff; color: #1d4ed8;
+  border-radius: 4px; padding: 2px 8px; font-weight: 700;
+}
+.diff-type-badge {
+  font-size: 10px; color: #64748b;
+  background: #f1f5f9; border-radius: 3px; padding: 2px 6px; font-weight: 600;
+}
+.diff-change-indicator {
+  font-size: 11px; font-weight: 600;
+}
+.diff-change-indicator.has-changes { color: #d97706; }
+.diff-change-indicator.no-changes  { color: #059669; }
+.diff-nav { margin-left: auto; display: flex; align-items: center; gap: 4px; }
+.btn-diff-nav {
   background: white; color: #64748b;
   border: 1px solid #e2e8f0; border-radius: 5px;
-  padding: 5px 10px; font-size: 11px; font-weight: 600; cursor: pointer;
+  padding: 4px 9px; font-size: 11px; font-weight: 600; cursor: pointer;
   transition: all .15s;
 }
-.btn-nav:hover { background: #f8fafc; color: #475569; border-color: #cbd5e1; }
-.prog-txt { flex: 1; text-align: center; font-size: 11px; color: #94a3b8; font-weight: 600; }
+.btn-diff-nav:hover { background: #f8fafc; border-color: #cbd5e1; }
+.btn-diff-nav:disabled { opacity: .35; cursor: not-allowed; }
+.diff-nav-cnt { font-size: 11px; color: #94a3b8; font-weight: 600; padding: 0 4px; }
 
-/* ── Toast ──────────────────────────────────────────────────── */
+.diff-table-scroll {
+  flex: 1; overflow-y: auto; padding: 8px 12px;
+}
+.diff-table-scroll::-webkit-scrollbar { width: 4px; }
+.diff-table-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 2px; }
+
+.diff-table {
+  width: 100%; border-collapse: collapse; font-size: 11.5px;
+  background: white; border-radius: 8px; overflow: hidden;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0,0,0,.05);
+}
+.diff-table th {
+  padding: 7px 10px; background: #f8fafc;
+  text-align: left; font-size: 10px; font-weight: 700;
+  color: #64748b; text-transform: uppercase; letter-spacing: .05em;
+  border-bottom: 2px solid #e2e8f0;
+}
+.diff-table th:first-child { width: 100px; }
+.diff-table th:nth-child(2), .diff-table th:nth-child(3) { width: calc(50% - 50px); }
+.diff-table td {
+  padding: 6px 10px; vertical-align: top;
+  border-bottom: 1px solid #f1f5f9;
+  line-height: 1.55; word-break: break-word;
+}
+.diff-table tr:last-child td { border-bottom: none; }
+.td-field {
+  font-family: monospace; font-size: 10.5px; font-weight: 700;
+  color: #94a3b8; white-space: nowrap;
+}
+
+/* Row styles */
+.row-same td { background: white; color: #64748b; }
+.row-same .td-field { color: #cbd5e1; }
+.row-changed .td-old  { background: #fef9ee; color: #92400e; }
+.row-changed .td-new  { background: #f0fdf4; color: #065f46; }
+.row-changed .td-field { color: #d97706; }
+.row-added .td-field   { color: #2563eb; }
+.row-added .td-old     { background: white; color: #cbd5e1; }
+.row-added .td-new     { background: #eff6ff; color: #1e40af; }
+.row-missing .td-field { color: #94a3b8; }
+.row-missing .td-old   { background: white; color: #94a3b8; }
+.row-missing .td-new   { background: white; color: #cbd5e1; font-style: italic; }
+
+/* ── Diff actions bar ───────────────────────────────────── */
+.diff-actions {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px;
+  background: white;
+  border-top: 2px solid #e2e8f0;
+  flex-shrink: 0;
+}
+.keep-key-label {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 11px; color: #64748b; cursor: pointer; white-space: nowrap;
+}
+.keep-key-label input { accent-color: #3b82f6; cursor: pointer; }
+.keep-key-label code { background: #f1f5f9; border-radius: 3px; padding: 1px 5px; font-size: 10.5px; color: #2563eb; }
+.action-btns { margin-left: auto; display: flex; gap: 7px; }
+.btn-keep {
+  background: #f1f5f9; color: #475569;
+  border: 1px solid #e2e8f0; border-radius: 6px;
+  padding: 7px 16px; font-size: 12px; font-weight: 700; cursor: pointer;
+  transition: background .15s;
+}
+.btn-keep:hover { background: #e2e8f0; }
+.btn-replace {
+  background: #059669; color: white; border: none; border-radius: 6px;
+  padding: 7px 16px; font-size: 12px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 1px 4px rgba(5,150,105,.3);
+  transition: opacity .15s;
+}
+.btn-replace:hover { opacity: .85; }
+.btn-replace:disabled, .btn-keep:disabled { opacity: .4; cursor: not-allowed; }
+
+/* ── Toast ──────────────────────────────────────────────── */
 .toast {
   position: fixed; bottom: 20px; left: 50%;
   transform: translateX(-50%) translateY(8px);
@@ -325,7 +345,7 @@ header {
       placeholder="粘贴 .bib 文件内容，自动解析…"></textarea>
   </div>
 
-  <!-- Right: workflow -->
+  <!-- Right: two-phase workflow -->
   <div class="right">
 
     <!-- Entry list -->
@@ -333,90 +353,87 @@ header {
       <div class="list-empty" id="list-empty">解析条目后开始核查</div>
     </div>
 
-    <!-- Workflow -->
-    <div class="workflow-scroll">
-      <div class="no-entry-msg" id="no-entry-msg">从上方列表选择一条参考文献</div>
-
-      <div id="active-workflow">
-
-        <!-- Entry info -->
-        <div class="entry-card" id="entry-card"></div>
-
-        <!-- Automation pipeline -->
-        <div class="pipeline-card">
-          <div class="pc-top">
-            <span class="pc-label">自动化流程</span>
-            <div class="delay-row">
-              <span>间隔</span>
-              <select id="delay-select">
-                <option value="1">1 s</option>
-                <option value="2">2 s</option>
-                <option value="3" selected>3 s</option>
-                <option value="5">5 s</option>
-                <option value="10">10 s</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="steps-track">
-            <div class="step" id="step-1">
-              <div class="step-dot" id="dot-1">1</div>
-              <div class="step-lbl">打开<br>Scholar</div>
-              <div class="step-connector"></div>
-            </div>
-            <div class="step" id="step-2">
-              <div class="step-dot" id="dot-2">2</div>
-              <div class="step-lbl">点击<br>Cite</div>
-              <div class="step-connector"></div>
-            </div>
-            <div class="step" id="step-3">
-              <div class="step-dot" id="dot-3">3</div>
-              <div class="step-lbl">点击<br>BibTeX</div>
-              <div class="step-connector"></div>
-            </div>
-            <div class="step" id="step-4">
-              <div class="step-dot" id="dot-4">4</div>
-              <div class="step-lbl">获取<br>内容</div>
-              <div class="step-connector"></div>
-            </div>
-            <div class="step" id="step-5">
-              <div class="step-dot" id="dot-5">5</div>
-              <div class="step-lbl">替换<br>条目</div>
-            </div>
-          </div>
-
-          <button class="btn-start" id="autofetch-btn">▶ 开始自动获取</button>
-          <div class="status-line" id="fetch-status"></div>
-        </div>
-
-        <!-- Actions -->
-        <div class="actions-card">
-          <div class="keep-key-row">
-            <input type="checkbox" id="keep-key" checked>
-            <label for="keep-key">保留原始 key：</label>
-            <code id="key-display"></code>
-          </div>
-          <div class="action-row">
-            <button class="btn-action btn-replace" id="replace-btn">✅ 替换条目</button>
-            <button class="btn-action btn-keep"    id="keep-btn">👍 保持不变</button>
-          </div>
-          <div class="nav-row">
-            <button class="btn-nav" id="prev-btn">← 上一条</button>
-            <span class="prog-txt" id="progress-text"></span>
-            <button class="btn-nav" id="next-btn">下一条 →</button>
-          </div>
-        </div>
-
-      </div><!-- /#active-workflow -->
+    <!-- Batch fetch control bar -->
+    <div class="fetch-bar" id="fetch-bar">
+      <button class="btn-batch" id="batch-start-btn">▶ 开始批量获取</button>
+      <button class="btn-stop" id="batch-stop-btn" style="display:none">■ 停止</button>
+      <span class="batch-progress" id="batch-progress"></span>
+      <div class="batch-steps" id="batch-steps" style="display:none">
+        <div class="bs-dot" id="bs1"></div>
+        <span class="bs-arrow">›</span>
+        <div class="bs-dot" id="bs2"></div>
+        <span class="bs-arrow">›</span>
+        <div class="bs-dot" id="bs3"></div>
+        <span class="bs-arrow">›</span>
+        <div class="bs-dot" id="bs4"></div>
+      </div>
+      <div class="delay-wrap">
+        <span>间隔</span>
+        <select id="delay-select">
+          <option value="1">1 s</option>
+          <option value="2">2 s</option>
+          <option value="3" selected>3 s</option>
+          <option value="5">5 s</option>
+          <option value="10">10 s</option>
+        </select>
+      </div>
     </div>
-  </div>
-</div>
 
-<!-- Hidden textarea used internally by replaceEntry() -->
-<textarea id="new-bib" style="display:none"></textarea>
+    <!-- Review area -->
+    <div class="review-area" id="review-area">
+
+      <!-- Placeholder when nothing selected -->
+      <div class="no-sel-msg" id="no-sel-msg">从上方列表选择一条参考文献</div>
+
+      <!-- Entry info (shown when pending/fetching/error) -->
+      <div class="entry-info" id="entry-info">
+        <div class="einfo-card" id="einfo-card"></div>
+        <div class="fetch-state-msg" id="fetch-state-msg"></div>
+      </div>
+
+      <!-- Diff panel (shown when fetch result is available) -->
+      <div id="diff-panel">
+        <div class="diff-topbar">
+          <span class="diff-entry-key" id="diff-key-label"></span>
+          <span class="diff-type-badge" id="diff-type-label"></span>
+          <span class="diff-change-indicator" id="diff-change-indicator"></span>
+          <div class="diff-nav">
+            <button class="btn-diff-nav" id="diff-prev-btn">← 上条差异</button>
+            <span class="diff-nav-cnt" id="diff-nav-cnt"></span>
+            <button class="btn-diff-nav" id="diff-next-btn">下条差异 →</button>
+          </div>
+        </div>
+
+        <div class="diff-table-scroll">
+          <table class="diff-table">
+            <thead>
+              <tr>
+                <th>字段</th>
+                <th>原始</th>
+                <th>Scholar</th>
+              </tr>
+            </thead>
+            <tbody id="diff-tbody"></tbody>
+          </table>
+        </div>
+
+        <div class="diff-actions">
+          <label class="keep-key-label">
+            <input type="checkbox" id="keep-key" checked>
+            保留原始 key：<code id="key-display"></code>
+          </label>
+          <div class="action-btns">
+            <button class="btn-keep" id="keep-btn">👍 保持原样</button>
+            <button class="btn-replace" id="replace-btn">✅ 替换</button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /.review-area -->
+  </div><!-- /.right -->
+</div><!-- /.main -->
 
 <div class="toast" id="toast"></div>
-
 <script src="index.js"></script>
 </body>
 </html>

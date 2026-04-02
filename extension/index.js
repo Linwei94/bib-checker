@@ -5,28 +5,20 @@ window.onerror = (msg, src, line) => {
 };
 
 // ── State ──────────────────────────────────────────────────────
-let entries    = [];
+let entries    = [];   // { key, type, raw, start, end, title, authors, year, venue,
+                       //   fetchStatus: 'pending'|'fetching'|'done'|'error',
+                       //   fetchResult: string|null,  fetchError: string|null,
+                       //   hasDiff: bool,
+                       //   reviewStatus: 'pending'|'replaced'|'kept' }
 let currentIdx = -1;
 let undoHistory = [];
 
-// ── Step management ────────────────────────────────────────────
-function setStep(n, state) {
-  const el  = document.getElementById('step-' + n);
-  const dot = document.getElementById('dot-' + n);
-  if (!el || !dot) return;
-  el.className = 'step ' + state;
-  if (state === 'active') {
-    dot.innerHTML = '<div class="step-spinner"></div>';
-  } else if (state === 'done') {
-    dot.innerHTML = '✓';
-  } else {
-    dot.innerHTML = n;
-  }
-}
+// Batch fetch queue
+let batchRunning  = false;
+let batchQueue    = [];   // indices to fetch
+let batchPos      = 0;
 
-function resetSteps() {
-  for (let i = 1; i <= 5; i++) setStep(i, 'idle');
-}
+let fetchDelay = parseInt(localStorage.getItem('bib-fetch-delay') || '3');
 
 // ── BibTeX parser ──────────────────────────────────────────────
 function parseBib(text) {
@@ -71,7 +63,11 @@ function parseBib(text) {
       authors: cleanStr(f.author  || ''),
       year:    (f.year || '').replace(/[{}]/g, '').trim(),
       venue:   cleanStr(f.journal || f.booktitle || f.howpublished || ''),
-      status: 'pending',
+      fetchStatus:  'pending',
+      fetchResult:  null,
+      fetchError:   null,
+      hasDiff:      false,
+      reviewStatus: 'pending',
     });
     i = k;
   }
@@ -115,11 +111,18 @@ function cleanStr(s) {
 }
 
 // ── Parse & render ─────────────────────────────────────────────
-function reparsePreservingStatus() {
-  const sm = {};
-  entries.forEach(e => { sm[e.key] = e.status; });
+function reparsePreservingState() {
+  const saved = {};
+  entries.forEach(e => {
+    saved[e.key] = {
+      fetchStatus: e.fetchStatus, fetchResult: e.fetchResult,
+      fetchError: e.fetchError, hasDiff: e.hasDiff, reviewStatus: e.reviewStatus,
+    };
+  });
   entries = parseBib(document.getElementById('bib-textarea').value);
-  entries.forEach(e => { if (sm[e.key]) e.status = sm[e.key]; });
+  entries.forEach(e => {
+    if (saved[e.key]) Object.assign(e, saved[e.key]);
+  });
 }
 
 function parseAndRender() {
@@ -129,11 +132,16 @@ function parseAndRender() {
   if (entries.length === 0) { showToast('未找到条目，请检查 BibTeX 格式'); return; }
   undoHistory = [];
   updateUndoBtn();
+  currentIdx = -1;
   renderEntryList();
-  selectEntry(0);
+  showReviewArea('no-sel');
+  document.getElementById('fetch-bar').style.display = 'flex';
+  updateBatchProgress();
+  updateStats();
   showToast(`已解析 ${entries.length} 条参考文献`);
 }
 
+// ── Entry list ─────────────────────────────────────────────────
 function renderEntryList() {
   const wrap  = document.getElementById('entry-list-wrap');
   const empty = document.getElementById('list-empty');
@@ -146,29 +154,51 @@ function renderEntryList() {
   entries.forEach((e, i) => {
     const div = document.createElement('div');
     div.className = 'entry-row' + (i === currentIdx ? ' active' : '');
+    div.dataset.idx = i;
     div.onclick = () => selectEntry(i);
-    const badge = e.status === 'ok' ? '✅' : e.status === 'replaced' ? '🔄' : '⏳';
-    div.innerHTML =
-      `<span class="entry-badge" onclick="toggleStatus(${i},event)" title="点击切换状态">${badge}</span>` +
-      `<span class="entry-key" title="${e.key}">${e.key}</span>` +
-      `<span class="entry-ttl" title="${e.title}">${e.title}</span>`;
+
+    const statusEl = document.createElement('span');
+    statusEl.className = 'entry-status';
+    statusEl.innerHTML = entryStatusIcon(e);
+
+    const keyEl = document.createElement('span');
+    keyEl.className = 'entry-key';
+    keyEl.title = e.key;
+    keyEl.textContent = e.key;
+
+    const ttlEl = document.createElement('span');
+    ttlEl.className = 'entry-ttl';
+    ttlEl.title = e.title;
+    ttlEl.textContent = e.title;
+
+    div.appendChild(statusEl);
+    div.appendChild(keyEl);
+    div.appendChild(ttlEl);
     wrap.appendChild(div);
   });
   updateStats();
 }
 
-// ── Toggle status ──────────────────────────────────────────────
-function toggleStatus(idx, event) {
-  event.stopPropagation();
-  pushHistory();
-  const e = entries[idx];
-  if (e.status === 'pending') e.status = 'ok';
-  else if (e.status === 'ok') e.status = 'pending';
-  renderEntryList();
+function entryStatusIcon(e) {
+  if (e.reviewStatus === 'replaced') return '✅';
+  if (e.reviewStatus === 'kept')     return '👍';
+  if (e.fetchStatus === 'fetching')  return '<span class="entry-spin"></span>';
+  if (e.fetchStatus === 'error')     return '❌';
+  if (e.fetchStatus === 'done') {
+    return e.hasDiff ? '🔍' : '<span style="color:#10b981;font-weight:700">=</span>';
+  }
+  return '⏳';
+}
+
+function updateEntryRow(idx) {
+  const row = document.querySelector(`.entry-row[data-idx="${idx}"]`);
+  if (!row) return;
+  const statusEl = row.querySelector('.entry-status');
+  if (statusEl) statusEl.innerHTML = entryStatusIcon(entries[idx]);
   updateStats();
 }
 
-// ── Select entry ───────────────────────────────────────────────
+// ── Select / show entry ────────────────────────────────────────
 function selectEntry(idx) {
   if (idx < 0 || idx >= entries.length) return;
   currentIdx = idx;
@@ -180,29 +210,374 @@ function selectEntry(idx) {
   });
 
   highlightInBib(e);
-
-  document.getElementById('no-entry-msg').style.display = 'none';
-  document.getElementById('active-workflow').style.display = 'flex';
-
-  const authShort = e.authors.length > 90 ? e.authors.slice(0, 90) + '…' : e.authors;
-  document.getElementById('entry-card').innerHTML =
-    `<div class="ec-title">${e.title}</div>` +
-    `<div class="ec-meta">` +
-    (e.authors ? `<b>作者：</b>${authShort}<br>` : '') +
-    (e.year    ? `<b>年份：</b>${e.year}` : '') +
-    (e.year && e.venue ? ' · ' : '') +
-    (e.venue   ? `<b>来源：</b>${e.venue.slice(0, 80)}` : '') +
-    `<br><b>类型：</b>@${e.type} &nbsp; <b>Key：</b><code>${e.key}</code>` +
-    `</div>`;
-
   document.getElementById('key-display').textContent = e.key;
-  document.getElementById('new-bib').value = '';
-  document.getElementById('progress-text').textContent = `${idx + 1} / ${entries.length}`;
-  setFetchStatus('', '');
-  resetSteps();
-  updateStats();
+
+  if (e.fetchStatus === 'done') {
+    renderDiff(idx);
+    showReviewArea('diff');
+  } else {
+    renderEntryInfo(idx);
+    showReviewArea('info');
+  }
 }
 
+function showReviewArea(mode) {
+  document.getElementById('no-sel-msg').style.display   = mode === 'no-sel' ? 'flex' : 'none';
+  document.getElementById('entry-info').style.display   = mode === 'info'   ? 'flex' : 'none';
+  document.getElementById('diff-panel').style.display   = mode === 'diff'   ? 'flex' : 'none';
+}
+
+function renderEntryInfo(idx) {
+  const e = entries[idx];
+  const authShort = e.authors.length > 90 ? e.authors.slice(0, 90) + '…' : e.authors;
+  document.getElementById('einfo-card').innerHTML =
+    `<div class="einfo-title">${escapeHtml(e.title)}</div>` +
+    `<div class="einfo-meta">` +
+    (e.authors ? `<b>作者：</b>${escapeHtml(authShort)}<br>` : '') +
+    (e.year    ? `<b>年份：</b>${e.year}` : '') +
+    (e.year && e.venue ? ' · ' : '') +
+    (e.venue   ? `<b>来源：</b>${escapeHtml(e.venue.slice(0, 80))}` : '') +
+    `<br><b>类型：</b>@${e.type} &nbsp; <b>Key：</b><code>${escapeHtml(e.key)}</code>` +
+    `</div>`;
+
+  const stateEl = document.getElementById('fetch-state-msg');
+  if (e.fetchStatus === 'pending') {
+    stateEl.className = 'fetch-state-msg';
+    stateEl.innerHTML = '⏳ 等待批量获取…';
+  } else if (e.fetchStatus === 'fetching') {
+    stateEl.className = 'fetch-state-msg';
+    stateEl.innerHTML = '<span class="inline-spin"></span> 正在从 Google Scholar 获取…';
+  } else if (e.fetchStatus === 'error') {
+    stateEl.className = 'fetch-state-msg error';
+    stateEl.textContent = '❌ 获取失败：' + (e.fetchError || '未知错误');
+  }
+}
+
+// ── Diff rendering ─────────────────────────────────────────────
+const IMPORTANT_FIELDS = ['title','author','year','journal','booktitle','volume','number','pages','doi','url','publisher','address','edition','month','note','howpublished','school','institution','organization'];
+
+function computeHasDiff(origRaw, scholarRaw) {
+  const of = extractFields(origRaw);
+  const sf = extractFields(scholarRaw);
+  const allKeys = new Set([...Object.keys(of), ...Object.keys(sf)]);
+  for (const k of allKeys) {
+    if (k === 'key') continue;
+    const ov = cleanStr(of[k] || '');
+    const sv = cleanStr(sf[k] || '');
+    if (ov !== sv) return true;
+  }
+  return false;
+}
+
+function renderDiff(idx) {
+  const e = entries[idx];
+  const scholarRaw = e.fetchResult || '';
+
+  // Update topbar
+  document.getElementById('diff-key-label').textContent = e.key;
+  document.getElementById('diff-type-label').textContent = '@' + e.type;
+
+  const of = extractFields(e.raw);
+  const sf = extractFields(scholarRaw);
+
+  // Build ordered field list: important ones first, then rest
+  const ofKeys = Object.keys(of).filter(k => k !== 'key');
+  const sfKeys = Object.keys(sf).filter(k => k !== 'key');
+  const allKeys = [...new Set([...IMPORTANT_FIELDS.filter(k => ofKeys.includes(k) || sfKeys.includes(k)), ...ofKeys, ...sfKeys])];
+
+  let changedCount = 0;
+  const rows = allKeys.map(k => {
+    const ov = of[k] !== undefined ? of[k] : null;
+    const sv = sf[k] !== undefined ? sf[k] : null;
+    const ovClean = cleanStr(ov || '');
+    const svClean = cleanStr(sv || '');
+    let rowClass;
+    if (ov === null) {
+      rowClass = 'row-added'; changedCount++;
+    } else if (sv === null) {
+      rowClass = 'row-missing';
+    } else if (ovClean === svClean) {
+      rowClass = 'row-same';
+    } else {
+      rowClass = 'row-changed'; changedCount++;
+    }
+    return { k, ov, sv, rowClass };
+  });
+
+  const indicator = document.getElementById('diff-change-indicator');
+  if (changedCount > 0) {
+    indicator.className = 'diff-change-indicator has-changes';
+    indicator.textContent = `${changedCount} 处差异`;
+  } else {
+    indicator.className = 'diff-change-indicator no-changes';
+    indicator.textContent = '内容相同';
+  }
+
+  // Render table
+  const tbody = document.getElementById('diff-tbody');
+  tbody.innerHTML = '';
+  rows.forEach(({ k, ov, sv, rowClass }) => {
+    const tr = document.createElement('tr');
+    tr.className = rowClass;
+    const missingTxt = '<span style="color:#cbd5e1;font-style:italic">—</span>';
+    tr.innerHTML =
+      `<td class="td-field">${escapeHtml(k)}</td>` +
+      `<td class="td-old">${ov !== null ? escapeHtml(ov) : missingTxt}</td>` +
+      `<td class="td-new">${sv !== null ? escapeHtml(sv) : missingTxt}</td>`;
+    tbody.appendChild(tr);
+  });
+
+  // Update review status in action buttons
+  const replaceBtn = document.getElementById('replace-btn');
+  const keepBtn = document.getElementById('keep-btn');
+  if (e.reviewStatus === 'replaced') {
+    replaceBtn.textContent = '✅ 已替换';
+    replaceBtn.disabled = true;
+    keepBtn.disabled = false;
+  } else if (e.reviewStatus === 'kept') {
+    keepBtn.textContent = '👍 已保留';
+    keepBtn.disabled = true;
+    replaceBtn.disabled = false;
+  } else {
+    replaceBtn.textContent = '✅ 替换';
+    replaceBtn.disabled = false;
+    keepBtn.textContent = '👍 保持原样';
+    keepBtn.disabled = false;
+  }
+
+  // Diff navigation counter
+  updateDiffNavCounter();
+}
+
+function updateDiffNavCounter() {
+  const diffEntries = entries.filter(e => e.fetchStatus === 'done');
+  const total = diffEntries.length;
+  const pos = diffEntries.findIndex(e => e === entries[currentIdx]);
+  document.getElementById('diff-nav-cnt').textContent = total > 0 ? `${pos + 1} / ${total}` : '';
+
+  const hasDiffEntries = entries.filter(e => e.fetchStatus === 'done' && e.hasDiff && e.reviewStatus === 'pending');
+  document.getElementById('diff-prev-btn').disabled = false;
+  document.getElementById('diff-next-btn').disabled = hasDiffEntries.length === 0;
+}
+
+// ── Batch fetch ────────────────────────────────────────────────
+function startBatchFetch() {
+  if (batchRunning) return;
+  batchQueue = entries.map((e, i) => i).filter(i => entries[i].fetchStatus === 'pending');
+  if (batchQueue.length === 0) { showToast('没有待获取的条目'); return; }
+  batchPos = 0;
+  batchRunning = true;
+  document.getElementById('batch-start-btn').style.display = 'none';
+  document.getElementById('batch-stop-btn').style.display = '';
+  document.getElementById('batch-steps').style.display = 'flex';
+  setBatchSteps(0);
+  fetchNext();
+}
+
+function stopBatchFetch() {
+  batchRunning = false;
+  document.getElementById('batch-start-btn').style.display = '';
+  document.getElementById('batch-stop-btn').style.display = 'none';
+  document.getElementById('batch-steps').style.display = 'none';
+  setBatchSteps(0);
+  // Reset any "fetching" entry back to pending
+  entries.forEach(e => { if (e.fetchStatus === 'fetching') e.fetchStatus = 'pending'; });
+  renderEntryList();
+  updateBatchProgress();
+}
+
+function fetchNext() {
+  if (!batchRunning) return;
+  if (batchPos >= batchQueue.length) {
+    // Done
+    batchRunning = false;
+    document.getElementById('batch-start-btn').style.display = '';
+    document.getElementById('batch-stop-btn').style.display = 'none';
+    document.getElementById('batch-steps').style.display = 'none';
+    setBatchSteps(0);
+    updateBatchProgress();
+    const remaining = entries.filter(e => e.fetchStatus === 'pending').length;
+    showToast(remaining === 0 ? '🎉 所有条目获取完毕！' : `批量获取完成，${remaining} 条跳过/失败`);
+    return;
+  }
+  const idx = batchQueue[batchPos];
+  const e = entries[idx];
+  if (e.fetchStatus !== 'pending') {
+    batchPos++;
+    fetchNext();
+    return;
+  }
+  e.fetchStatus = 'fetching';
+  updateEntryRow(idx);
+  // Auto-select current fetching entry if nothing is showing
+  if (currentIdx === -1 || entries[currentIdx].fetchStatus !== 'fetching') {
+    // Don't auto-switch if user is reviewing a diff panel
+    if (currentIdx === -1 || entries[currentIdx].fetchStatus === 'pending') {
+      selectEntry(idx);
+    }
+  }
+  updateBatchProgress();
+  setBatchSteps(1);
+
+  const url = `https://scholar.google.com/scholar?q=${encodeURIComponent(e.title)}&bib-checker=1&bib-delay=${fetchDelay}`;
+  try {
+    chrome.runtime.sendMessage({ type: 'bib-ext-open-scholar', url }, () => {
+      if (chrome.runtime.lastError) {
+        markFetchError(idx, '扩展通信失败');
+        return;
+      }
+      setBatchSteps(2);
+    });
+  } catch (err) {
+    markFetchError(idx, '无法连接扩展后台');
+  }
+}
+
+function markFetchError(idx, msg) {
+  const e = entries[idx];
+  e.fetchStatus = 'error';
+  e.fetchError = msg;
+  updateEntryRow(idx);
+  updateBatchProgress();
+  if (currentIdx === idx) renderEntryInfo(idx);
+  batchPos++;
+  if (batchRunning) setTimeout(fetchNext, 500);
+}
+
+function storeFetchResult(bib) {
+  if (!batchRunning && batchQueue.length === 0) return;
+  const idx = batchQueue[batchPos];
+  if (idx === undefined) return;
+  const e = entries[idx];
+
+  e.fetchResult = bib;
+  e.fetchStatus = 'done';
+  e.hasDiff = computeHasDiff(e.raw, bib);
+  updateEntryRow(idx);
+  updateBatchProgress();
+
+  // If this entry is currently viewed, switch to diff panel
+  if (currentIdx === idx) {
+    renderDiff(idx);
+    showReviewArea('diff');
+  }
+
+  batchPos++;
+  if (batchRunning) {
+    setTimeout(fetchNext, fetchDelay * 1000);
+  }
+}
+
+function setBatchSteps(active) {
+  // active = 0 (none), 1 (scholar), 2 (cite), 3 (bibtex), 4 (fetch)
+  for (let i = 1; i <= 4; i++) {
+    const dot = document.getElementById('bs' + i);
+    if (!dot) continue;
+    if (i < active) dot.className = 'bs-dot done';
+    else if (i === active) dot.className = 'bs-dot active';
+    else dot.className = 'bs-dot';
+  }
+}
+
+function updateBatchProgress() {
+  const done    = entries.filter(e => e.fetchStatus === 'done').length;
+  const error   = entries.filter(e => e.fetchStatus === 'error').length;
+  const fetching = entries.filter(e => e.fetchStatus === 'fetching').length;
+  const total   = entries.length;
+  const el = document.getElementById('batch-progress');
+  if (!el) return;
+  if (total === 0) { el.textContent = ''; return; }
+  let txt = `${done} / ${total} 已获取`;
+  if (error > 0) txt += `，${error} 失败`;
+  if (fetching > 0) txt += `，正在获取…`;
+  el.textContent = txt;
+}
+
+// ── Message from Scholar content script ───────────────────────
+try { chrome.runtime.onMessage.addListener((msg) => {
+  if (msg.type === 'scholar-progress') {
+    setBatchSteps(msg.step);
+    return;
+  }
+  if (msg.type === 'bib-checker-bib') {
+    if (!msg.bib) return;
+    setBatchSteps(4);
+    setTimeout(() => storeFetchResult(msg.bib), 100);
+  }
+}); } catch (e) { console.warn('chrome.runtime not available:', e); }
+
+// ── Actions: replace / keep ────────────────────────────────────
+function replaceEntry() {
+  if (currentIdx < 0) return;
+  const e = entries[currentIdx];
+  if (!e.fetchResult) { showToast('没有获取到 Scholar 结果'); return; }
+
+  let newBib = e.fetchResult.trim();
+  if (document.getElementById('keep-key').checked) {
+    newBib = newBib.replace(/^(@\w+\s*\{\s*)[\w:._\-]+/, `$1${e.key}`);
+  }
+  const ta = document.getElementById('bib-textarea');
+  const text = ta.value;
+  const re = new RegExp('@\\w+\\s*\\{\\s*' + escapeRe(e.key) + '\\s*,', 'i');
+  const m = re.exec(text);
+  if (!m) { showToast(`找不到 @${e.key}`); return; }
+  pushHistory();
+  let depth = 0, ii = m.index;
+  for (; ii < text.length; ii++) {
+    if (text[ii] === '{') depth++;
+    else if (text[ii] === '}') { depth--; if (depth === 0) { ii++; break; } }
+  }
+  ta.value = text.slice(0, m.index) + newBib + text.slice(ii);
+  saveBib();
+
+  // Reparse and restore state
+  reparsePreservingState();
+  const newIdx = entries.findIndex(x => x.key === e.key);
+  if (newIdx !== -1) {
+    entries[newIdx].reviewStatus = 'replaced';
+    currentIdx = newIdx;
+  }
+  renderEntryList();
+  if (currentIdx >= 0 && entries[currentIdx].fetchStatus === 'done') {
+    renderDiff(currentIdx);
+  }
+  showToast('✅ 条目已替换');
+}
+
+function keepEntry() {
+  if (currentIdx < 0) return;
+  pushHistory();
+  entries[currentIdx].reviewStatus = 'kept';
+  updateEntryRow(currentIdx);
+  renderDiff(currentIdx);  // refresh button states
+  showToast('👍 已标记为保留原样');
+}
+
+// ── Diff navigation ────────────────────────────────────────────
+function goNextDiff() {
+  const candidates = [];
+  for (let i = 0; i < entries.length; i++) {
+    if (entries[i].fetchStatus === 'done') candidates.push(i);
+  }
+  if (candidates.length === 0) return;
+  // Find next after currentIdx (or wrap)
+  const after = candidates.filter(i => i > currentIdx);
+  const target = after.length > 0 ? after[0] : candidates[0];
+  selectEntry(target);
+}
+
+function goPrevDiff() {
+  const candidates = [];
+  for (let i = 0; i < entries.length; i++) {
+    if (entries[i].fetchStatus === 'done') candidates.push(i);
+  }
+  if (candidates.length === 0) return;
+  const before = candidates.filter(i => i < currentIdx);
+  const target = before.length > 0 ? before[before.length - 1] : candidates[candidates.length - 1];
+  selectEntry(target);
+}
+
+// ── Highlight in BibTeX editor ─────────────────────────────────
 function highlightInBib(entry) {
   const ta = document.getElementById('bib-textarea');
   const text = ta.value;
@@ -225,7 +600,11 @@ function highlightInBib(entry) {
 function pushHistory() {
   undoHistory.push({
     text: document.getElementById('bib-textarea').value,
-    statuses: entries.map(e => ({ key: e.key, status: e.status })),
+    state: entries.map(e => ({
+      key: e.key,
+      fetchStatus: e.fetchStatus, fetchResult: e.fetchResult,
+      fetchError: e.fetchError, hasDiff: e.hasDiff, reviewStatus: e.reviewStatus,
+    })),
     idx: currentIdx,
   });
   if (undoHistory.length > 30) undoHistory.shift();
@@ -236,13 +615,18 @@ function undoState() {
   if (!undoHistory.length) { showToast('没有可撤销的操作'); return; }
   const s = undoHistory.pop();
   document.getElementById('bib-textarea').value = s.text;
-  reparsePreservingStatus();
-  s.statuses.forEach(({ key, status }) => {
-    const e = entries.find(x => x.key === key);
-    if (e) e.status = status;
+  reparsePreservingState();
+  s.state.forEach(saved => {
+    const e = entries.find(x => x.key === saved.key);
+    if (e) Object.assign(e, {
+      fetchStatus: saved.fetchStatus, fetchResult: saved.fetchResult,
+      fetchError: saved.fetchError, hasDiff: saved.hasDiff, reviewStatus: saved.reviewStatus,
+    });
   });
   renderEntryList();
-  selectEntry(s.idx >= 0 && s.idx < entries.length ? s.idx : currentIdx);
+  const restoreIdx = s.idx >= 0 && s.idx < entries.length ? s.idx : -1;
+  if (restoreIdx >= 0) selectEntry(restoreIdx);
+  else showReviewArea('no-sel');
   updateUndoBtn();
   showToast('↩ 已撤销');
 }
@@ -254,109 +638,19 @@ function updateUndoBtn() {
   btn.textContent = undoHistory.length > 0 ? `↩ 撤销 (${undoHistory.length})` : '↩ 撤销';
 }
 
-// ── Delay setting ──────────────────────────────────────────────
-let fetchDelay = parseInt(localStorage.getItem('bib-fetch-delay') || '3');
-function setFetchDelay(val) {
-  fetchDelay = parseInt(val);
-  localStorage.setItem('bib-fetch-delay', fetchDelay);
-}
-
-// ── Status line ────────────────────────────────────────────────
-function setFetchStatus(cls, html) {
-  const el = document.getElementById('fetch-status');
-  el.className = 'status-line' + (cls ? ' ' + cls : '');
-  el.innerHTML = html;
-}
-
-// ── Auto-fetch ─────────────────────────────────────────────────
-function autoFetchBib() {
-  if (currentIdx < 0) return;
-  resetSteps();
-  setStep(1, 'active');
-  setFetchStatus('', '<span class="spinner"></span> 正在打开 Google Scholar…');
-  const url = `https://scholar.google.com/scholar?q=${encodeURIComponent(entries[currentIdx].title)}&bib-checker=1&bib-delay=${fetchDelay}`;
-  try {
-    chrome.runtime.sendMessage({ type: 'bib-ext-open-scholar', url }, () => {
-      if (chrome.runtime.lastError) {
-        setFetchStatus('error', '❌ 扩展通信失败，请重新加载扩展页面');
-        return;
-      }
-      setStep(1, 'done');
-      setStep(2, 'active');
-      setFetchStatus('', '<span class="spinner"></span> 等待扩展点击 Cite…');
-    });
-  } catch(e) {
-    setFetchStatus('error', '❌ 无法连接扩展后台，请在扩展页面中使用');
-  }
-}
-
-// ── Actions ────────────────────────────────────────────────────
-function replaceEntry() {
-  if (currentIdx < 0) return;
-  let newBib = document.getElementById('new-bib').value.trim();
-  if (!newBib) { showToast('没有新的 BibTeX 内容'); return; }
-  const e = entries[currentIdx];
-  if (document.getElementById('keep-key').checked) {
-    newBib = newBib.replace(/^(@\w+\s*\{\s*)[\w:._\-]+/, `$1${e.key}`);
-  }
-  const ta = document.getElementById('bib-textarea');
-  const text = ta.value;
-  const re = new RegExp('@\\w+\\s*\\{\\s*' + escapeRe(e.key) + '\\s*,', 'i');
-  const m = re.exec(text);
-  if (!m) { showToast(`找不到 @${e.key}`); return; }
-  pushHistory();
-  let depth = 0, ii = m.index;
-  for (; ii < text.length; ii++) {
-    if (text[ii] === '{') depth++;
-    else if (text[ii] === '}') { depth--; if (depth === 0) { ii++; break; } }
-  }
-  ta.value = text.slice(0, m.index) + newBib + text.slice(ii);
-  reparsePreservingStatus();
-  const newIdx = entries.findIndex(x => x.key === e.key);
-  if (newIdx !== -1) { entries[newIdx].status = 'replaced'; currentIdx = newIdx; }
-  renderEntryList();
-  showToast('✅ 条目已替换');
-  setTimeout(() => {
-    const ni = findNextPending(newIdx !== -1 ? newIdx : currentIdx);
-    selectEntry(ni !== -1 ? ni : currentIdx);
-  }, 300);
-}
-
-function keepOriginal() {
-  if (currentIdx < 0) return;
-  pushHistory();
-  entries[currentIdx].status = 'ok';
-  renderEntryList();
-  const next = findNextPending(currentIdx);
-  selectEntry(next !== -1 ? next : currentIdx);
-}
-
-function findNextPending(from) {
-  for (let i = from + 1; i < entries.length; i++) {
-    if (entries[i].status === 'pending') return i;
-  }
-  for (let i = 0; i <= from; i++) {
-    if (entries[i].status === 'pending') return i;
-  }
-  return -1;
-}
-
-function navigate(dir) {
-  const next = currentIdx + dir;
-  if (next >= 0 && next < entries.length) selectEntry(next);
-}
-
+// ── Stats ──────────────────────────────────────────────────────
 function updateStats() {
   if (entries.length === 0) { document.getElementById('stats').innerHTML = ''; return; }
-  const pending  = entries.filter(e => e.status === 'pending').length;
-  const ok       = entries.filter(e => e.status === 'ok').length;
-  const replaced = entries.filter(e => e.status === 'replaced').length;
+  const pending = entries.filter(e => e.fetchStatus === 'pending').length;
+  const diff    = entries.filter(e => e.fetchStatus === 'done' && e.hasDiff).length;
+  const done    = entries.filter(e => e.reviewStatus === 'replaced' || e.reviewStatus === 'kept' || (e.fetchStatus === 'done' && !e.hasDiff)).length;
   document.getElementById('stats').innerHTML =
-    `<span class="stat-chip pending">⏳ ${pending}</span>` +
-    `<span class="stat-chip ok">✅ ${ok}</span>` +
-    `<span class="stat-chip replaced">🔄 ${replaced}</span>`;
+    `<span class="stat-chip s-pending">⏳ ${pending}</span>` +
+    `<span class="stat-chip s-diff">🔍 ${diff}</span>` +
+    `<span class="stat-chip s-done">✅ ${done}</span>`;
 }
 
+// ── Download ───────────────────────────────────────────────────
 function downloadBib() {
   const text = document.getElementById('bib-textarea').value;
   if (!text.trim()) { showToast('没有内容可下载'); return; }
@@ -367,7 +661,11 @@ function downloadBib() {
   showToast('正在下载 main.bib');
 }
 
+// ── Utils ──────────────────────────────────────────────────────
 function escapeRe(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+function escapeHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
 
 function showToast(msg) {
   const el = document.getElementById('toast');
@@ -376,44 +674,6 @@ function showToast(msg) {
   clearTimeout(el._timer);
   el._timer = setTimeout(() => el.classList.remove('show'), 2500);
 }
-
-// ── Extension messages ─────────────────────────────────────────
-try { chrome.runtime.onMessage.addListener((msg) => {
-  if (msg.type === 'scholar-progress') {
-    for (let i = 1; i < msg.step; i++) setStep(i, 'done');
-    setStep(msg.step, 'active');
-    const labels = ['', '打开 Scholar', '点击 Cite', '点击 BibTeX', '获取内容', '替换条目'];
-    setFetchStatus('', `<span class="spinner"></span> 正在执行：${labels[msg.step]}…`);
-    return;
-  }
-  if (msg.type === 'bib-checker-bib') {
-    const bib = msg.bib;
-    if (!bib || currentIdx < 0) return;
-    for (let i = 1; i <= 4; i++) setStep(i, 'done');
-    setStep(5, 'active');
-    setFetchStatus('', '<span class="spinner"></span> BibTeX 已获取，正在替换…');
-    document.getElementById('new-bib').value = bib;
-    setTimeout(() => {
-      replaceEntry();
-      setStep(5, 'done');
-      const next = findNextPending(currentIdx);
-      if (next !== -1) {
-        setFetchStatus('ok', `✅ 已替换，${fetchDelay} 秒后获取下一条…`);
-        setTimeout(() => autoFetchBib(), fetchDelay * 1000);
-      } else {
-        setFetchStatus('ok', '🎉 所有条目已处理完毕');
-      }
-    }, 400);
-  }
-}); } catch(e) { console.warn('chrome.runtime not available:', e); }
-
-// ── Keyboard shortcuts ─────────────────────────────────────────
-document.addEventListener('keydown', e => {
-  if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
-  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); navigate(1); }
-  if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   { e.preventDefault(); navigate(-1); }
-  if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undoState(); }
-});
 
 // ── Persist ────────────────────────────────────────────────────
 let _saveTimer;
@@ -424,25 +684,41 @@ function saveBib() {
   }, 600);
 }
 
+function setFetchDelay(val) {
+  fetchDelay = parseInt(val);
+  localStorage.setItem('bib-fetch-delay', fetchDelay);
+}
+
+// ── Keyboard shortcuts ─────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); goNextDiff(); }
+  if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   { e.preventDefault(); goPrevDiff(); }
+  if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undoState(); }
+  if (e.key === 'r' && !e.ctrlKey && !e.metaKey) replaceEntry();
+  if (e.key === 'k' && !e.ctrlKey && !e.metaKey) keepEntry();
+});
+
 // ── Event wiring & Init ────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('parse-btn').addEventListener('click', parseAndRender);
   document.getElementById('download-btn').addEventListener('click', downloadBib);
   document.getElementById('undo-btn').addEventListener('click', undoState);
-  document.getElementById('autofetch-btn').addEventListener('click', autoFetchBib);
+  document.getElementById('batch-start-btn').addEventListener('click', startBatchFetch);
+  document.getElementById('batch-stop-btn').addEventListener('click', stopBatchFetch);
   document.getElementById('replace-btn').addEventListener('click', replaceEntry);
-  document.getElementById('keep-btn').addEventListener('click', keepOriginal);
-  document.getElementById('prev-btn').addEventListener('click', () => navigate(-1));
-  document.getElementById('next-btn').addEventListener('click', () => navigate(1));
+  document.getElementById('keep-btn').addEventListener('click', keepEntry);
+  document.getElementById('diff-prev-btn').addEventListener('click', goPrevDiff);
+  document.getElementById('diff-next-btn').addEventListener('click', goNextDiff);
   document.getElementById('delay-select').addEventListener('change', function() { setFetchDelay(this.value); });
   document.getElementById('bib-textarea').addEventListener('paste', () => setTimeout(parseAndRender, 30));
   document.getElementById('bib-textarea').addEventListener('input', saveBib);
 
   // Init
   document.getElementById('delay-select').value = fetchDelay;
-  const _saved = localStorage.getItem('bib-checker-content');
-  if (_saved) {
-    document.getElementById('bib-textarea').value = _saved;
+  const saved = localStorage.getItem('bib-checker-content');
+  if (saved) {
+    document.getElementById('bib-textarea').value = saved;
     parseAndRender();
   }
 });

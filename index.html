@@ -907,8 +907,7 @@ function setFetchDelay(val) {
 function autoFetchBib() {
   if (currentIdx < 0) return;
   const url = getSearchUrl('scholar') + `&bib-checker=1&bib-delay=${fetchDelay}`;
-  // Use bridge → background → chrome.tabs.create() to bypass user-gesture requirement
-  window.postMessage({ type: 'bib-ext-open-scholar', url }, '*');
+  chrome.runtime.sendMessage({ type: 'bib-ext-open-scholar', url });
   setFetchStatus('loading', `<span class="spinner"></span> ${lang === 'zh' ? '已打开 Google Scholar，扩展自动运行中…' : 'Opened Google Scholar, extension running…'}`);
 }
 
@@ -995,8 +994,12 @@ function getSearchUrl(service) {
 function openDirect(service) {
   if (currentIdx < 0) return;
   let url = getSearchUrl(service);
-  if (service === 'scholar') url += `&bib-checker=1&bib-delay=${fetchDelay}`;
-  window.open(url, '_blank');
+  if (service === 'scholar') {
+    url += `&bib-checker=1&bib-delay=${fetchDelay}`;
+    chrome.runtime.sendMessage({ type: 'bib-ext-open-scholar', url });
+  } else {
+    window.open(url, '_blank');
+  }
 }
 
 function openSearch(service) {
@@ -1174,9 +1177,9 @@ function showToast(msg) {
 }
 
 // ── Receive BibTeX from Scholar extension ─────────────────────────
-window.addEventListener('message', (e) => {
-  if (e.data?.type !== 'bib-checker-bib') return;
-  const bib = e.data.bib;
+chrome.runtime.onMessage.addListener((msg) => {
+  if (msg.type !== 'bib-checker-bib') return;
+  const bib = msg.bib;
   if (!bib || currentIdx < 0) return;
   document.getElementById('new-bib').value = bib;
   updateDiffView();
