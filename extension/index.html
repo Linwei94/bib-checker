@@ -191,7 +191,18 @@ header {
   font-size: 12.5px; color: #64748b;
   display: flex; align-items: center; gap: 8px;
 }
-.fetch-state-msg.error { color: #dc2626; border-color: #fecaca; background: #fff1f2; }
+.fetch-state-msg.error { color: #dc2626; border-color: #fecaca; background: #fff1f2; align-items: flex-start; }
+.error-body { display: flex; flex-direction: column; gap: 6px; width: 100%; }
+.error-reason { font-weight: 600; font-size: 12.5px; }
+.error-hint { font-size: 11.5px; color: #7f1d1d; line-height: 1.5; }
+.error-actions { display: flex; gap: 8px; margin-top: 4px; }
+.btn-error-action {
+  font-size: 12px; font-weight: 600; padding: 5px 12px; border-radius: 6px; cursor: pointer;
+  border: 1px solid #fca5a5; background: white; color: #dc2626; transition: background .15s;
+}
+.btn-error-action:hover { background: #fee2e2; }
+.btn-error-action.btn-retry { border-color: #93c5fd; color: #1d4ed8; }
+.btn-error-action.btn-retry:hover { background: #eff6ff; }
 .inline-spin {
   display: inline-block; width: 12px; height: 12px;
   border: 2px solid #3b82f6; border-top-color: transparent;

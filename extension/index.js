@@ -249,8 +249,21 @@ function renderEntryInfo(idx) {
     stateEl.className = 'fetch-state-msg';
     stateEl.innerHTML = '<span class="inline-spin"></span> 正在从 Google Scholar 获取…';
   } else if (e.fetchStatus === 'error') {
+    const reason = e.fetchError || '未知错误';
+    const isCaptcha = /验证|captcha|人机/i.test(reason);
+    const hint = isCaptcha
+      ? '可能触发了 Google Scholar 的人机验证，请手动打开 Scholar 完成验证后重试。'
+      : '未能在 Google Scholar 找到匹配结果，请手动搜索并粘贴正确的 BibTeX。';
     stateEl.className = 'fetch-state-msg error';
-    stateEl.textContent = '❌ 获取失败：' + (e.fetchError || '未知错误');
+    stateEl.innerHTML =
+      `<div class="error-body">` +
+        `<div class="error-reason">❌ ${escapeHtml(reason)}</div>` +
+        `<div class="error-hint">${escapeHtml(hint)}</div>` +
+        `<div class="error-actions">` +
+          `<button class="btn-error-action" onclick="openScholarSearch(${idx})">🔍 手动搜索</button>` +
+          `<button class="btn-error-action btn-retry" onclick="retryEntry(${idx})">🔄 重试</button>` +
+        `</div>` +
+      `</div>`;
   }
 }
 
@@ -481,6 +494,31 @@ function fetchNext() {
   } catch (err) {
     markFetchError(idx, '无法连接扩展后台');
   }
+}
+
+function openScholarSearch(idx) {
+  const e = entries[idx];
+  const url = `https://scholar.google.com/scholar?q=${encodeURIComponent(e.title)}`;
+  window.open(url, '_blank');
+}
+
+function retryEntry(idx) {
+  if (batchRunning) { showToast('请等待当前批量获取完成后再重试'); return; }
+  const e = entries[idx];
+  e.fetchStatus = 'pending';
+  e.fetchError = null;
+  updateEntryRow(idx);
+  updateBatchProgress();
+  renderEntryInfo(idx);
+  // Start a single-entry batch
+  batchQueue = [idx];
+  batchPos = 0;
+  batchRunning = true;
+  document.getElementById('batch-start-btn').style.display = 'none';
+  document.getElementById('batch-stop-btn').style.display = '';
+  document.getElementById('batch-steps').style.display = 'flex';
+  setBatchSteps(0);
+  fetchNext();
 }
 
 function markFetchError(idx, msg) {
