@@ -4,7 +4,7 @@ A Chrome extension that catches AI-hallucinated references in your BibTeX. LLMs 
 
 **BibTeX Checker** batch-fetches your entire `.bib` file against Google Scholar, then shows a field-by-field diff with word-level highlights so you can fix fake citations before submission — in minutes instead of hours.
 
-🌐 **[Website](https://linwei94.github.io/bib-checker/)**
+🌐 **[Website](https://linwei94.github.io/bib-checker/)** &nbsp;·&nbsp; 🇨🇳 **[中文说明](README_zh.md)**
 
 ---
 
