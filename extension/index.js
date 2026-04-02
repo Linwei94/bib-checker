@@ -547,18 +547,12 @@ function replaceEntry() {
   ta.value = text.slice(0, m.index) + newBib + text.slice(ii);
   saveBib();
 
-  // Reparse and restore state
   reparsePreservingState();
   const newIdx = entries.findIndex(x => x.key === e.key);
-  if (newIdx !== -1) {
-    entries[newIdx].reviewStatus = 'replaced';
-    currentIdx = newIdx;
-  }
+  if (newIdx !== -1) { entries[newIdx].reviewStatus = 'replaced'; currentIdx = newIdx; }
   renderEntryList();
-  if (currentIdx >= 0 && entries[currentIdx].fetchStatus === 'done') {
-    renderDiff(currentIdx);
-  }
-  showToast('✅ 条目已替换');
+
+  autoAdvance('replace');
 }
 
 function keepEntry() {
@@ -566,8 +560,52 @@ function keepEntry() {
   pushHistory();
   entries[currentIdx].reviewStatus = 'kept';
   updateEntryRow(currentIdx);
-  renderDiff(currentIdx);  // refresh button states
-  showToast('👍 已标记为保留原样');
+  autoAdvance('keep');
+}
+
+// ── Auto-advance with animation ────────────────────────────────
+function findNextUnreviewed(from) {
+  // Forward pass
+  for (let i = from + 1; i < entries.length; i++) {
+    if (entries[i].fetchStatus === 'done' && entries[i].reviewStatus === 'pending') return i;
+  }
+  // Wrap around
+  for (let i = 0; i <= from; i++) {
+    if (entries[i].fetchStatus === 'done' && entries[i].reviewStatus === 'pending') return i;
+  }
+  // No unreviewed with diff — fall back to any fetched
+  for (let i = from + 1; i < entries.length; i++) {
+    if (entries[i].fetchStatus === 'done') return i;
+  }
+  return -1;
+}
+
+function autoAdvance(action) {
+  const btn = document.getElementById(action === 'replace' ? 'replace-btn' : 'keep-btn');
+  if (btn) {
+    btn.classList.add('btn-flash');
+    btn.addEventListener('animationend', () => btn.classList.remove('btn-flash'), { once: true });
+  }
+
+  const next = findNextUnreviewed(currentIdx);
+  const panel = document.getElementById('diff-panel');
+
+  if (next === -1) {
+    // All done — just refresh current state
+    if (currentIdx >= 0 && entries[currentIdx].fetchStatus === 'done') renderDiff(currentIdx);
+    const pending = entries.filter(e => e.fetchStatus === 'done' && e.reviewStatus === 'pending').length;
+    showToast(pending === 0 ? '🎉 所有条目已审阅完毕' : (action === 'replace' ? '✅ 已替换' : '👍 已保留'));
+    return;
+  }
+
+  // Animate out, switch, animate in
+  panel.classList.add('anim-exit');
+  setTimeout(() => {
+    panel.classList.remove('anim-exit');
+    selectEntry(next);
+    panel.classList.add('anim-enter');
+    panel.addEventListener('animationend', () => panel.classList.remove('anim-enter'), { once: true });
+  }, 140);
 }
 
 // ── Diff navigation ────────────────────────────────────────────

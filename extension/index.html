@@ -202,6 +202,16 @@ header {
 #diff-panel {
   display: none; flex-direction: column; flex: 1; overflow: hidden;
 }
+@keyframes panelExit {
+  from { opacity: 1; transform: translateX(0); }
+  to   { opacity: 0; transform: translateX(-24px); }
+}
+@keyframes panelEnter {
+  from { opacity: 0; transform: translateX(24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+#diff-panel.anim-exit  { animation: panelExit  140ms ease-in  forwards; pointer-events: none; }
+#diff-panel.anim-enter { animation: panelEnter 180ms ease-out forwards; }
 
 .diff-topbar {
   display: flex; align-items: center; gap: 8px;
@@ -309,6 +319,12 @@ header {
 }
 .btn-replace:hover { opacity: .85; }
 .btn-replace:disabled, .btn-keep:disabled { opacity: .4; cursor: not-allowed; }
+@keyframes btnFlash {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+.btn-flash { animation: btnFlash 160ms ease-out; }
 
 /* ── Toast ──────────────────────────────────────────────── */
 .toast {
