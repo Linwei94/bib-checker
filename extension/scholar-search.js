@@ -124,8 +124,8 @@ async function run() {
         try { window.opener.postMessage({ type: 'bib-checker-bib', bib: bibText }, '*'); } catch(e) {}
       }
       showResult(bibText);
-      // Close this Scholar window after a short delay
-      setTimeout(() => window.close(), 1500);
+      // Close this Scholar tab after a short delay
+      setTimeout(() => chrome.runtime.sendMessage({ type: 'close-current-tab' }), 1500);
     } else {
       setMsg('❌ 获取失败：' + (res?.error || '未知错误'));
     }

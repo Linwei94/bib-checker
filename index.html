@@ -887,7 +887,9 @@ function formatFromCrossRef(key, item) {
 
 function autoFetchBib() {
   if (currentIdx < 0) return;
-  openDirect('scholar');
+  const url = getSearchUrl('scholar') + '&bib-checker=1';
+  // Use bridge → background → chrome.tabs.create() to bypass user-gesture requirement
+  window.postMessage({ type: 'bib-ext-open-scholar', url }, '*');
   setFetchStatus('loading', `<span class="spinner"></span> ${lang === 'zh' ? '已打开 Google Scholar，扩展自动运行中…' : 'Opened Google Scholar, extension running…'}`);
 }
 
