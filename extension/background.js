@@ -34,6 +34,12 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     return false;
   }
 
+  // Scholar content script reports step progress — relay to checker tab
+  if (msg.type === 'scholar-progress') {
+    if (bibCheckerTabId != null) chrome.tabs.sendMessage(bibCheckerTabId, msg);
+    return false;
+  }
+
   // Scholar content script has the BibTeX — relay to checker tab, then close Scholar tab
   if (msg.type === 'bib-result') {
     if (bibCheckerTabId != null) {

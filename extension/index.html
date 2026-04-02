@@ -1,579 +1,433 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BibTeX Reference Checker</title>
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%231e40af'/><text x='14' y='23' font-family='Georgia,serif' font-size='22' font-weight='700' fill='white' text-anchor='middle'>B</text><circle cx='23' cy='9' r='8' fill='%23059669'/><polyline points='19.5,9 22,12 27,6.5' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/></svg>">
+<title>📚 BibTeX Checker</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='28'>📚</text></svg>">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: #f0f2f5;
+  background: #0f172a;
   height: 100vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  color: #1f2937;
+  color: #f1f5f9;
+  font-size: 13px;
 }
 
+/* ── Header ─────────────────────────────────────────────────── */
 header {
-  background: linear-gradient(135deg, #1e40af, #3b82f6);
-  color: white;
-  padding: 10px 18px;
+  background: #1e293b;
+  border-bottom: 1px solid #334155;
+  padding: 8px 14px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 10px;
   flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  height: 42px;
 }
-header h1 { font-size: 1rem; font-weight: 700; }
-.header-right { display: flex; align-items: center; gap: 10px; }
-#stats { display: flex; gap: 6px; font-size: 12px; }
-#stats span { background: rgba(255,255,255,0.18); border-radius: 20px; padding: 2px 10px; font-weight: 500; }
-
-.btn-lang {
-  background: rgba(255,255,255,0.2);
-  color: white;
-  border: 1px solid rgba(255,255,255,0.4);
-  border-radius: 6px;
-  padding: 5px 12px;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.15s;
+.header-title { font-size: 14px; font-weight: 700; color: #f8fafc; letter-spacing: -.01em; }
+.header-stats { display: flex; gap: 5px; margin-left: 6px; }
+.stat-chip {
+  border-radius: 20px; padding: 2px 9px; font-size: 11px; font-weight: 700;
+  background: rgba(255,255,255,.05);
 }
-.btn-lang:hover { background: rgba(255,255,255,0.3); }
-
-.btn-download {
-  background: white;
-  color: #1e40af;
-  border: none;
-  border-radius: 6px;
-  padding: 6px 14px;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
+.stat-chip.pending  { color: #fbbf24; }
+.stat-chip.ok       { color: #34d399; }
+.stat-chip.replaced { color: #60a5fa; }
+.hr { margin-left: auto; display: flex; gap: 6px; }
+.btn-hdr {
+  background: transparent; color: #64748b; border: 1px solid #334155;
+  border-radius: 5px; padding: 4px 10px; font-size: 11px; font-weight: 600; cursor: pointer;
+  transition: all .15s;
 }
-.btn-download:hover { background: #eff6ff; }
+.btn-hdr:hover { background: #334155; color: #94a3b8; }
+.btn-hdr:disabled { opacity: .3; cursor: not-allowed; }
 
-.main { display: flex; flex: 1; gap: 10px; padding: 10px; overflow: hidden; }
+/* ── Layout ─────────────────────────────────────────────────── */
+.main { display: flex; flex: 1; overflow: hidden; }
 
-.left-panel { display: flex; flex-direction: column; width: 42%; gap: 7px; flex-shrink: 0; }
-.panel-toolbar { display: flex; align-items: center; justify-content: space-between; }
-.panel-toolbar label { font-size: 13px; font-weight: 600; color: #374151; }
+/* ── Left: BibTeX input ──────────────────────────────────────── */
+.left {
+  width: 38%; display: flex; flex-direction: column;
+  border-right: 1px solid #1e293b;
+  flex-shrink: 0;
+}
+.panel-hdr {
+  padding: 7px 11px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid #1e293b;
+  flex-shrink: 0;
+}
+.panel-lbl { font-size: 10px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: .07em; }
 .btn-parse {
-  background: #1e40af; color: white; border: none; border-radius: 5px;
-  padding: 5px 13px; font-size: 12px; font-weight: 600; cursor: pointer;
+  background: #3b82f6; color: white; border: none; border-radius: 5px;
+  padding: 4px 10px; font-size: 11px; font-weight: 700; cursor: pointer;
 }
-.btn-parse:hover { background: #1d4ed8; }
+.btn-parse:hover { background: #2563eb; }
 
 #bib-textarea {
-  flex: 1;
-  font-family: 'Courier New', Courier, monospace;
-  font-size: 11.5px; line-height: 1.55;
-  border: 1px solid #d1d5db; border-radius: 7px;
-  padding: 10px; resize: none; outline: none;
-  background: #fff; color: #111827;
-}
-#bib-textarea:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.12); }
-
-.right-panel { flex: 1; display: flex; flex-direction: column; gap: 8px; overflow: hidden; min-width: 0; }
-
-.entry-list-wrap {
-  background: white; border: 1px solid #d1d5db; border-radius: 7px;
-  overflow-y: auto; max-height: 195px; flex-shrink: 0;
-}
-.entry-placeholder { color: #9ca3af; font-size: 13px; text-align: center; padding: 18px; font-style: italic; }
-.entry-item {
-  display: flex; align-items: center; gap: 8px;
-  padding: 7px 12px; border-bottom: 1px solid #f3f4f6;
-  cursor: pointer; transition: background 0.1s;
-}
-.entry-item:last-child { border-bottom: none; }
-.entry-item:hover { background: #f9fafb; }
-.entry-item.active { background: #eff6ff; border-left: 3px solid #3b82f6; padding-left: 9px; }
-.entry-badge {
-  font-size: 14px; flex-shrink: 0; width: 20px; text-align: center;
-  cursor: pointer; border-radius: 3px; padding: 1px;
-  transition: background 0.1s;
-}
-.entry-badge:hover { background: rgba(0,0,0,0.08); }
-.entry-badge[title] { cursor: pointer; }
-.entry-key { font-family: monospace; font-size: 11px; color: #6b7280; flex-shrink: 0; width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.entry-title-small { font-size: 12px; color: #374151; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-.checker-panel {
-  background: white; border: 1px solid #d1d5db; border-radius: 7px;
-  padding: 14px; flex: 1; display: flex; flex-direction: column;
-  gap: 10px; overflow-y: auto;
-}
-.checker-placeholder { color: #9ca3af; font-size: 13px; text-align: center; padding: 30px 0; font-style: italic; }
-
-.entry-info {
-  background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px;
-  padding: 10px 12px; font-size: 12.5px; line-height: 1.65;
-}
-.entry-info .info-title { font-weight: 700; color: #111827; margin-bottom: 5px; font-size: 13px; }
-.entry-info .info-row { color: #4b5563; }
-.entry-info code { background: #e5e7eb; border-radius: 3px; padding: 1px 5px; font-size: 11px; color: #374151; }
-
-.btn-row { display: flex; gap: 8px; }
-.btn {
-  flex: 1; padding: 8px 10px; border: none; border-radius: 6px;
-  font-size: 13px; font-weight: 600; cursor: pointer;
-  transition: opacity 0.15s, transform 0.1s;
-}
-.btn:hover { opacity: 0.88; }
-.btn:active { transform: scale(0.97); }
-.btn-scholar  { background: #4285f4; color: white; }
-.btn-semantic { background: #7c3aed; color: white; }
-.btn-replace  { background: #059669; color: white; }
-.btn-keep     { background: #e5e7eb; color: #374151; }
-.btn-nav      { background: #f3f4f6; color: #374151; font-size: 12px; padding: 6px 10px; flex: 0 0 auto; }
-.btn-undo     { background: #fef3c7; color: #92400e; font-size: 12px; padding: 6px 10px; flex: 0 0 auto; }
-.btn-undo:disabled { opacity: 0.35; cursor: not-allowed; }
-.btn-undo:disabled:hover { opacity: 0.35; }
-
-.btn-autofetch {
-  width: 100%; padding: 10px; border: none; border-radius: 8px;
-  background: linear-gradient(135deg, #0ea5e9, #6366f1);
-  color: white; font-size: 14px; font-weight: 700;
-  cursor: pointer; transition: opacity 0.15s, transform 0.1s;
-  letter-spacing: .01em;
-}
-.btn-autofetch:hover { opacity: 0.88; }
-.btn-autofetch:active { transform: scale(0.98); }
-.btn-autofetch:disabled { opacity: 0.5; cursor: not-allowed; }
-
-.fetch-status {
-  font-size: 12px; min-height: 18px; padding: 2px 0;
-  display: flex; align-items: center; gap: 6px;
-}
-.fetch-status.loading { color: #6366f1; }
-.fetch-status.ok      { color: #059669; }
-.fetch-status.warn    { color: #d97706; }
-.fetch-status.error   { color: #dc2626; }
-@keyframes spin { to { transform: rotate(360deg); } }
-.spinner {
-  display: inline-block; width: 12px; height: 12px;
-  border: 2px solid currentColor; border-top-color: transparent;
-  border-radius: 50%; animation: spin .7s linear infinite;
-}
-
-.field-label { font-size: 12px; font-weight: 600; color: #374151; display: block; margin-bottom: 4px; }
-
-#new-bib {
-  width: 100%; font-family: 'Courier New', Courier, monospace;
-  font-size: 11.5px; line-height: 1.5;
-  border: 1px solid #d1d5db; border-radius: 6px;
-  padding: 8px 10px; resize: vertical; outline: none;
-  min-height: 130px; background: #fafafa;
-}
-#new-bib:focus { border-color: #3b82f6; background: white; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
-
-.keep-key-row { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #6b7280; }
-.keep-key-row code { background: #e5e7eb; border-radius: 3px; padding: 1px 5px; font-size: 11px; color: #374151; }
-
-.nav-row { display: flex; align-items: center; gap: 6px; }
-#progress-text { flex: 1; text-align: center; font-size: 12px; color: #9ca3af; font-weight: 500; }
-
-/* ── Search side panel (画中画 launcher) ─────────────────────── */
-#search-panel {
-  position: fixed;
-  top: 0; right: -380px;
-  width: 360px; height: 100vh;
-  background: white;
-  border-left: 2px solid #3b82f6;
-  box-shadow: -6px 0 24px rgba(0,0,0,0.18);
-  display: flex; flex-direction: column;
-  z-index: 1000;
-  transition: right 0.3s cubic-bezier(.4,0,.2,1);
-}
-#search-panel.open { right: 0; }
-
-.sp-header {
-  background: linear-gradient(135deg, #1e40af, #3b82f6);
-  color: white; padding: 9px 13px;
-  display: flex; align-items: center; gap: 8px; flex-shrink: 0;
-}
-.sp-header-title { font-size: 13px; font-weight: 700; flex: 1; }
-.sp-close {
-  background: rgba(255,255,255,0.2); border: none; color: white;
-  border-radius: 5px; padding: 4px 10px; font-size: 13px;
-  cursor: pointer; font-weight: 700; flex-shrink: 0;
-}
-.sp-close:hover { background: rgba(255,255,255,0.35); }
-
-.sp-tabs {
-  display: flex; border-bottom: 1px solid #e2e8f0;
-  flex-shrink: 0; background: #f8fafc;
-}
-.sp-tab {
-  flex: 1; padding: 7px 8px; font-size: 12px; font-weight: 600;
-  border: none; background: none; cursor: pointer; color: #6b7280;
-  border-bottom: 2px solid transparent; transition: all 0.15s;
-}
-.sp-tab.active { color: #1e40af; border-bottom-color: #3b82f6; background: white; }
-.sp-tab:hover:not(.active) { background: #f0f0f0; }
-
-.sp-body {
-  flex: 1; padding: 16px 14px; display: flex; flex-direction: column;
-  gap: 14px; overflow-y: auto;
-}
-
-.sp-paper-box {
-  background: #f0f7ff; border: 1px solid #bfdbfe; border-radius: 7px;
+  flex: 1; resize: none; outline: none; border: none;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+  font-size: 10.5px; line-height: 1.65;
+  background: #080e1a; color: #64748b;
   padding: 10px 12px;
 }
-.sp-paper-label { font-size: 10px; font-weight: 700; color: #3b82f6; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 4px; }
-.sp-paper-title { font-size: 12.5px; font-weight: 600; color: #1e3a5f; line-height: 1.5; }
+#bib-textarea::placeholder { color: #1e293b; }
 
-.sp-side-btn {
-  display: flex; align-items: center; justify-content: center; gap: 8px;
-  width: 100%; padding: 11px 14px; border: none; border-radius: 8px;
-  font-size: 14px; font-weight: 700; cursor: pointer; text-decoration: none;
-  transition: opacity 0.15s, transform 0.1s;
-}
-.sp-side-btn:hover { opacity: 0.88; }
-.sp-side-btn:active { transform: scale(0.98); }
-.sp-side-scholar  { background: #4285f4; color: white; }
-.sp-side-semantic { background: #7c3aed; color: white; }
+/* ── Right: workflow ─────────────────────────────────────────── */
+.right { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
 
-.sp-side-hint {
-  font-size: 11px; color: #9ca3af; text-align: center; margin-top: -8px; line-height: 1.5;
+/* entry list */
+.entry-list-wrap {
+  border-bottom: 1px solid #1e293b;
+  max-height: 190px; overflow-y: auto; flex-shrink: 0;
+}
+.entry-list-wrap::-webkit-scrollbar { width: 4px; }
+.entry-list-wrap::-webkit-scrollbar-track { background: transparent; }
+.entry-list-wrap::-webkit-scrollbar-thumb { background: #334155; border-radius: 2px; }
+
+.list-empty { padding: 14px; text-align: center; font-size: 12px; color: #334155; font-style: italic; }
+
+.entry-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 5px 11px; cursor: pointer;
+  border-bottom: 1px solid rgba(255,255,255,.025);
+  transition: background .1s;
+}
+.entry-row:hover { background: #1a2744; }
+.entry-row.active { background: #172554; border-left: 2px solid #3b82f6; padding-left: 9px; }
+.entry-badge { font-size: 12px; flex-shrink: 0; cursor: pointer; transition: transform .1s; }
+.entry-badge:hover { transform: scale(1.3); }
+.entry-key { font-family: monospace; font-size: 10px; color: #374151; width: 120px; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.entry-ttl { font-size: 11.5px; color: #64748b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.entry-row.active .entry-key { color: #60a5fa; }
+.entry-row.active .entry-ttl { color: #94a3b8; }
+
+/* workflow scroll area */
+.workflow-scroll {
+  flex: 1; overflow-y: auto; padding: 12px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.workflow-scroll::-webkit-scrollbar { width: 4px; }
+.workflow-scroll::-webkit-scrollbar-track { background: transparent; }
+.workflow-scroll::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 2px; }
+
+.no-entry-msg { flex: 1; display: flex; align-items: center; justify-content: center; color: #1e293b; font-style: italic; }
+
+#active-workflow { display: none; flex-direction: column; gap: 10px; }
+
+/* ── Entry card ──────────────────────────────────────────────── */
+.entry-card {
+  background: #1e293b; border-radius: 8px; padding: 11px 13px;
+  border: 1px solid #334155;
+}
+.ec-title { font-size: 13px; font-weight: 600; color: #e2e8f0; line-height: 1.4; margin-bottom: 6px; }
+.ec-meta  { font-size: 11px; color: #475569; line-height: 1.7; }
+.ec-meta code { background: #0f172a; border-radius: 3px; padding: 1px 5px; font-size: 10px; color: #38bdf8; }
+
+/* ── Pipeline card ──────────────────────────────────────────── */
+.pipeline-card {
+  background: #1e293b; border-radius: 8px; padding: 13px;
+  border: 1px solid #334155;
+}
+.pc-top {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px;
+}
+.pc-label { font-size: 10px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: .07em; }
+.delay-row { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #475569; }
+.delay-row select {
+  background: #0f172a; color: #64748b; border: 1px solid #334155;
+  border-radius: 4px; padding: 2px 5px; font-size: 11px; cursor: pointer; outline: none;
+}
+.delay-row select:focus { border-color: #3b82f6; }
+
+/* steps track */
+.steps-track {
+  position: relative;
+  display: flex; align-items: flex-start;
+  margin-bottom: 16px;
+}
+/* connector line behind dots */
+.steps-track::before {
+  content: '';
+  position: absolute;
+  top: 15px;
+  left: 15px; right: 15px;
+  height: 2px;
+  background: #334155;
+  z-index: 0;
+}
+.step {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  gap: 6px; position: relative; z-index: 1;
+}
+/* active connector fill */
+.step.done + .step::before,
+.step.done + .step.done::before {
+  content: '';
+  position: absolute;
+  top: 15px; right: 50%; left: -50%;
+  height: 2px; background: #10b981; z-index: -1;
 }
 
-.sp-divider { border: none; border-top: 1px solid #f0f0f0; margin: 0; }
+.step-dot {
+  width: 30px; height: 30px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  border: 2px solid #334155;
+  background: #0f172a;
+  transition: border-color .3s, background .3s, box-shadow .3s;
+  font-size: 12px; font-weight: 700; color: #334155;
+}
+.step.active .step-dot {
+  border-color: #3b82f6; background: #172554; color: #93c5fd;
+  box-shadow: 0 0 0 4px rgba(59,130,246,.15);
+  animation: pulse .9s ease-in-out infinite;
+}
+.step.done .step-dot {
+  border-color: #10b981; background: #052e16; color: #10b981;
+}
+@keyframes pulse {
+  0%,100% { box-shadow: 0 0 0 3px rgba(59,130,246,.2); }
+  50%      { box-shadow: 0 0 0 7px rgba(59,130,246,.05); }
+}
+.step-icon { font-size: 13px; line-height: 1; }
+.step-lbl {
+  font-size: 9.5px; text-align: center; line-height: 1.35;
+  color: #334155; white-space: nowrap;
+  transition: color .3s;
+}
+.step.active .step-lbl { color: #60a5fa; }
+.step.done   .step-lbl { color: #34d399; }
 
-.sp-steps-title { font-size: 11px; font-weight: 700; color: #374151; text-transform: uppercase; letter-spacing: .05em; }
-.sp-steps { display: flex; flex-direction: column; gap: 6px; }
-.sp-step {
-  display: flex; align-items: flex-start; gap: 8px; font-size: 12px; color: #4b5563; line-height: 1.5;
-}
-.sp-step-num {
-  background: #3b82f6; color: white; border-radius: 50%;
-  width: 18px; height: 18px; font-size: 10px; font-weight: 700;
-  display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px;
+/* spinner inside active dot */
+@keyframes spin { to { transform: rotate(360deg); } }
+.step-spinner {
+  width: 14px; height: 14px;
+  border: 2px solid #3b82f6; border-top-color: transparent;
+  border-radius: 50%; animation: spin .6s linear infinite;
 }
 
-.sp-url-row { display: flex; gap: 6px; align-items: center; }
-.sp-url-display {
-  flex: 1; font-family: monospace; font-size: 10.5px; color: #6b7280;
-  background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 5px;
-  padding: 4px 7px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+/* start button */
+.btn-start {
+  width: 100%; padding: 11px;
+  background: linear-gradient(135deg, #1d4ed8, #7c3aed);
+  color: white; border: none; border-radius: 7px;
+  font-size: 13px; font-weight: 700; cursor: pointer;
+  letter-spacing: .02em;
+  transition: opacity .15s, transform .1s;
 }
-.sp-copy-btn {
-  background: #f3f4f6; color: #374151; border: 1px solid #d1d5db;
-  border-radius: 5px; padding: 4px 9px; font-size: 11px; font-weight: 600;
-  cursor: pointer; white-space: nowrap; flex-shrink: 0;
-}
-.sp-copy-btn:hover { background: #e5e7eb; }
+.btn-start:hover { opacity: .88; }
+.btn-start:active { transform: scale(.98); }
+.btn-start:disabled { opacity: .35; cursor: not-allowed; }
 
-/* ── Overlay dim when panel open ──────────────────────────────── */
-#sp-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.15);
-  z-index: 999; display: none;
+/* status line */
+.status-line {
+  margin-top: 9px; min-height: 16px;
+  font-size: 11.5px; color: #3b82f6;
+  display: flex; align-items: center; gap: 6px;
 }
-#sp-overlay.show { display: block; }
-
-/* ── Diff view ───────────────────────────────────────────────── */
-#diff-view {
-  display: none; border: 1px solid #e2e8f0; border-radius: 6px;
-  padding: 8px 10px; background: #f8fafc; font-size: 11.5px;
-  max-height: 180px; overflow-y: auto;
+.status-line.ok    { color: #34d399; }
+.status-line.warn  { color: #fbbf24; }
+.status-line.error { color: #f87171; }
+@keyframes spin2 { to { transform: rotate(360deg); } }
+.spinner {
+  display: inline-block; width: 11px; height: 11px;
+  border: 2px solid currentColor; border-top-color: transparent;
+  border-radius: 50%; animation: spin2 .6s linear infinite;
+  flex-shrink: 0;
 }
-.diff-title { font-size: 11px; font-weight: 700; color: #374151; margin-bottom: 6px; text-transform: uppercase; letter-spacing: .04em; }
-.diff-table { width: 100%; border-collapse: collapse; }
-.diff-table td { padding: 2px 5px; vertical-align: top; line-height: 1.45; }
-.diff-field { font-family: monospace; font-weight: 700; color: #374151; width: 64px; flex-shrink: 0; }
-.diff-arrow { color: #9ca3af; width: 14px; text-align: center; }
-.diff-old  { color: #991b1b; max-width: 0; width: 42%; word-break: break-all; }
-.diff-new  { color: #065f46; max-width: 0; width: 42%; word-break: break-all; }
-.diff-changed .diff-old { background: #fff7ed; border-radius: 3px; }
-.diff-changed .diff-new { background: #ecfdf5; border-radius: 3px; }
-.diff-added   .diff-new { background: #d1fae5; border-radius: 3px; }
-.diff-removed .diff-old { background: #fee2e2; border-radius: 3px; }
-.diff-same-msg { color: #059669; font-size: 12px; }
 
+/* ── Actions card ───────────────────────────────────────────── */
+.actions-card {
+  background: #1e293b; border-radius: 8px; padding: 11px 13px;
+  border: 1px solid #334155;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.keep-key-row {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11px; color: #475569;
+}
+.keep-key-row input[type=checkbox] { accent-color: #3b82f6; cursor: pointer; }
+.keep-key-row label { cursor: pointer; }
+.keep-key-row code { background: #0f172a; border-radius: 3px; padding: 1px 5px; font-size: 10px; color: #38bdf8; }
+
+.action-row { display: flex; gap: 7px; }
+.btn-action {
+  flex: 1; padding: 9px 8px; border: none; border-radius: 6px;
+  font-size: 13px; font-weight: 700; cursor: pointer; transition: opacity .15s;
+}
+.btn-action:hover { opacity: .85; }
+.btn-replace { background: #059669; color: white; }
+.btn-keep    { background: #1e3a5f; color: #60a5fa; border: 1px solid #1e40af; }
+
+.nav-row { display: flex; align-items: center; gap: 6px; }
+.btn-nav {
+  background: transparent; color: #475569; border: 1px solid #334155;
+  border-radius: 5px; padding: 5px 10px; font-size: 11px; font-weight: 600; cursor: pointer;
+}
+.btn-nav:hover { background: #1e293b; color: #94a3b8; }
+.prog-txt { flex: 1; text-align: center; font-size: 11px; color: #334155; font-weight: 700; }
+
+/* ── Toast ──────────────────────────────────────────────────── */
 .toast {
-  position: fixed; bottom: 20px; right: 20px;
-  background: #1e293b; color: white;
-  padding: 9px 16px; border-radius: 8px; font-size: 13px;
-  opacity: 0; transform: translateY(8px);
-  transition: all 0.2s; pointer-events: none; z-index: 1001;
+  position: fixed; bottom: 20px; left: 50%;
+  transform: translateX(-50%) translateY(8px);
+  background: #334155; color: #f1f5f9;
+  padding: 7px 18px; border-radius: 8px; font-size: 12px;
+  opacity: 0; transition: all .2s; pointer-events: none; z-index: 9999;
+  white-space: nowrap;
 }
-.toast.show { opacity: 1; transform: translateY(0); }
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 </style>
 </head>
 <body>
 
 <header>
-  <h1 data-i18n="title">📚 BibTeX Reference Checker</h1>
-  <div class="header-right">
-    <div id="stats"></div>
-    <button class="btn-lang" onclick="toggleLang()" id="lang-btn">English</button>
-    <button class="btn-download" onclick="downloadBib()" data-i18n="download">⬇ Download .bib</button>
+  <span class="header-title">📚 BibTeX Checker</span>
+  <div class="header-stats" id="stats"></div>
+  <div class="hr">
+    <button class="btn-hdr" onclick="downloadBib()">⬇ 下载 .bib</button>
+    <button class="btn-hdr" onclick="undoState()" id="undo-btn" disabled>↩ 撤销</button>
   </div>
 </header>
 
 <div class="main">
-  <div class="left-panel">
-    <div class="panel-toolbar">
-      <label data-i18n="bib-source">BibTeX Source</label>
-      <button class="btn-parse" onclick="parseAndRender()" data-i18n="parse-btn">Parse Entries →</button>
+
+  <!-- ── Left: BibTeX source ── -->
+  <div class="left">
+    <div class="panel-hdr">
+      <span class="panel-lbl">BibTeX 内容</span>
+      <button class="btn-parse" onclick="parseAndRender()">解析条目 →</button>
     </div>
-    <textarea id="bib-textarea" spellcheck="false" data-i18n-placeholder="bib-placeholder" onpaste="setTimeout(parseAndRender,30)" oninput="saveBib()"></textarea>
+    <textarea id="bib-textarea" spellcheck="false"
+      placeholder="粘贴 .bib 文件内容，自动解析…"
+      onpaste="setTimeout(parseAndRender,30)"
+      oninput="saveBib()"></textarea>
   </div>
 
-  <div class="right-panel">
+  <!-- ── Right: workflow ── -->
+  <div class="right">
+    <!-- Entry list -->
     <div class="entry-list-wrap" id="entry-list-wrap">
-      <div class="entry-placeholder" data-i18n="list-placeholder">Parse entries to begin</div>
+      <div class="list-empty" id="list-empty">解析条目后开始核查</div>
     </div>
 
-    <div class="checker-panel" id="checker-panel">
-      <div class="checker-placeholder" id="checker-placeholder" data-i18n="checker-placeholder">
-        Select an entry from the list above to check it
-      </div>
+    <!-- Workflow area -->
+    <div class="workflow-scroll">
+      <div class="no-entry-msg" id="no-entry-msg">从上方列表选择一条参考文献</div>
 
-      <div id="active-checker" style="display:none; flex-direction:column; gap:10px; flex:1;">
-        <div class="entry-info" id="entry-info"></div>
+      <div id="active-workflow">
 
-        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-          <button class="btn btn-autofetch" id="autofetch-btn" onclick="autoFetchBib()" data-i18n="btn-autofetch" style="flex:1;min-width:180px;">✨ 自动获取 BibTeX</button>
-          <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:#64748b;white-space:nowrap;">
-            <span data-i18n="delay-label">间隔</span>
-            <select id="delay-select" onchange="setFetchDelay(this.value)" style="padding:4px 8px;border:1px solid #cbd5e1;border-radius:6px;font-size:13px;background:white;cursor:pointer;">
-              <option value="1">1 s</option>
-              <option value="2">2 s</option>
-              <option value="3" selected>3 s</option>
-              <option value="5">5 s</option>
-              <option value="10">10 s</option>
-            </select>
-          </label>
+        <!-- Entry card -->
+        <div class="entry-card" id="entry-card"></div>
+
+        <!-- Automation pipeline -->
+        <div class="pipeline-card">
+          <div class="pc-top">
+            <span class="pc-label">自动化流程</span>
+            <div class="delay-row">
+              <span>间隔</span>
+              <select id="delay-select" onchange="setFetchDelay(this.value)">
+                <option value="1">1 s</option>
+                <option value="2">2 s</option>
+                <option value="3" selected>3 s</option>
+                <option value="5">5 s</option>
+                <option value="10">10 s</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="steps-track">
+            <div class="step idle" id="step-1">
+              <div class="step-dot" id="dot-1">1</div>
+              <div class="step-lbl">打开<br>Scholar</div>
+            </div>
+            <div class="step idle" id="step-2">
+              <div class="step-dot" id="dot-2">2</div>
+              <div class="step-lbl">点击<br>Cite</div>
+            </div>
+            <div class="step idle" id="step-3">
+              <div class="step-dot" id="dot-3">3</div>
+              <div class="step-lbl">点击<br>BibTeX</div>
+            </div>
+            <div class="step idle" id="step-4">
+              <div class="step-dot" id="dot-4">4</div>
+              <div class="step-lbl">获取<br>内容</div>
+            </div>
+            <div class="step idle" id="step-5">
+              <div class="step-dot" id="dot-5">5</div>
+              <div class="step-lbl">替换<br>条目</div>
+            </div>
+          </div>
+
+          <button class="btn-start" id="autofetch-btn" onclick="autoFetchBib()">▶ 开始自动获取</button>
+          <div class="status-line" id="fetch-status"></div>
         </div>
-        <div class="fetch-status" id="fetch-status"></div>
 
-        <div class="btn-row">
-          <button class="btn btn-scholar"  onclick="openDirect('scholar')"  data-i18n="btn-scholar">🔍 Google Scholar</button>
-          <button class="btn btn-semantic" onclick="openDirect('semantic')" data-i18n="btn-semantic">📖 Semantic Scholar</button>
+        <!-- Actions -->
+        <div class="actions-card">
+          <div class="keep-key-row">
+            <input type="checkbox" id="keep-key" checked>
+            <label for="keep-key">保留原始 key：</label>
+            <code id="key-display"></code>
+          </div>
+          <div class="action-row">
+            <button class="btn-action btn-replace" onclick="replaceEntry()">✅ 替换条目</button>
+            <button class="btn-action btn-keep"    onclick="keepOriginal()">👍 保持不变</button>
+          </div>
+          <div class="nav-row">
+            <button class="btn-nav" onclick="navigate(-1)">← 上一条</button>
+            <span class="prog-txt" id="progress-text"></span>
+            <button class="btn-nav" onclick="navigate(1)">下一条 →</button>
+          </div>
         </div>
 
-        <div>
-          <label class="field-label" for="new-bib" data-i18n="new-bib-label">Paste new BibTeX (Scholar → Cite → BibTeX):</label>
-          <textarea id="new-bib" rows="6" data-i18n-placeholder="new-bib-placeholder" oninput="updateDiffView()"></textarea>
-        </div>
+      </div><!-- /#active-workflow -->
+    </div><!-- /.workflow-scroll -->
+  </div><!-- /.right -->
+</div><!-- /.main -->
 
-        <div id="diff-view"></div>
-
-        <div class="keep-key-row">
-          <input type="checkbox" id="keep-key" checked>
-          <label for="keep-key" data-i18n="keep-key-label">Keep original key:</label>
-          <code id="key-display"></code>
-        </div>
-
-        <div class="btn-row">
-          <button class="btn btn-replace" onclick="replaceEntry()" data-i18n="btn-replace">✅ Replace Entry</button>
-          <button class="btn btn-keep"    onclick="keepOriginal()" data-i18n="btn-keep">👍 Keep Original</button>
-        </div>
-
-        <div class="nav-row">
-          <button class="btn btn-nav"  onclick="navigate(-1)" data-i18n="btn-prev">← Prev</button>
-          <span id="progress-text">0 / 0</span>
-          <button class="btn btn-nav"  onclick="navigate(1)"  data-i18n="btn-next">Next →</button>
-          <button class="btn btn-undo" onclick="undoState()"  data-i18n="btn-undo" id="undo-btn" disabled>↩ Undo</button>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Search side panel (画中画 launcher) -->
-<div id="sp-overlay" onclick="closeSearchPanel()"></div>
-<div id="search-panel">
-  <div class="sp-header">
-    <span class="sp-header-title" data-i18n="sp-panel-title">🔍 Search Reference</span>
-    <button class="sp-close" onclick="closeSearchPanel()">✕</button>
-  </div>
-  <div class="sp-tabs">
-    <button class="sp-tab active" id="sp-tab-scholar"  onclick="switchTab('scholar')"  data-i18n="btn-scholar">🔍 Google Scholar</button>
-    <button class="sp-tab"        id="sp-tab-semantic" onclick="switchTab('semantic')" data-i18n="btn-semantic">📖 Semantic Scholar</button>
-  </div>
-  <div class="sp-body">
-    <div class="sp-paper-box">
-      <div class="sp-paper-label" data-i18n="sp-searching">Searching for</div>
-      <div class="sp-paper-title" id="sp-paper-title"></div>
-    </div>
-
-    <button class="sp-side-btn sp-side-scholar" id="sp-side-scholar-btn" onclick="openSideWindow('scholar')" data-i18n="sp-open-scholar">
-      🔍 Open Google Scholar
-    </button>
-    <button class="sp-side-btn sp-side-semantic" id="sp-side-semantic-btn" onclick="openSideWindow('semantic')" style="display:none" data-i18n="sp-open-semantic">
-      📖 Open Semantic Scholar
-    </button>
-    <div class="sp-side-hint" data-i18n="sp-side-hint">Opens snapped to the right side of your screen</div>
-
-    <hr class="sp-divider">
-
-    <div class="sp-steps-title" data-i18n="sp-steps-title">How to get BibTeX</div>
-    <div class="sp-steps" id="sp-steps">
-      <!-- populated by JS based on active tab -->
-    </div>
-
-    <div class="sp-url-row">
-      <div class="sp-url-display" id="sp-url-display"></div>
-      <button class="sp-copy-btn" onclick="copySearchUrl()" data-i18n="sp-copy">Copy URL</button>
-    </div>
-  </div>
-</div>
+<!-- Hidden: used internally by replaceEntry() -->
+<textarea id="new-bib" style="display:none"></textarea>
 
 <div class="toast" id="toast"></div>
 
 <script>
-// ── i18n ──────────────────────────────────────────────────────────
-const I18N = {
-  en: {
-    'title':              '📚 BibTeX Reference Checker',
-    'download':           '⬇ Download .bib',
-    'bib-source':         'BibTeX Source',
-    'parse-btn':          'Parse Entries →',
-    'bib-placeholder':    'Paste your .bib file content here, then click "Parse Entries" →',
-    'list-placeholder':   'Parse entries to begin',
-    'checker-placeholder':'Select an entry from the list above to check it',
-    'btn-scholar':        '🔍 Google Scholar',
-    'btn-semantic':       '📖 Semantic Scholar',
-    'new-bib-label':      'Paste new BibTeX (Scholar → Cite → BibTeX):',
-    'new-bib-placeholder':'@inproceedings{key,\n  title={...},\n  author={...},\n  year={...},\n  booktitle={...}\n}',
-    'keep-key-label':     'Keep original key:',
-    'btn-replace':        '✅ Replace Entry',
-    'btn-keep':           '👍 Keep Original',
-    'btn-prev':           '← Prev',
-    'btn-next':           'Next →',
-    'btn-undo':           '↩ Undo',
-    'sp-panel-title':     '🔍 Search Reference',
-    'sp-searching':       'Searching for',
-    'sp-open-scholar':    '🔍 Open Google Scholar',
-    'sp-open-semantic':   '📖 Open Semantic Scholar',
-    'sp-side-hint':       'Opens snapped to the right side of your screen',
-    'sp-steps-title':     'How to get BibTeX',
-    'sp-copy':            'Copy URL',
-    'sp-steps-scholar':   ['Search and find your paper', 'Click "Cite" (") below the result', 'Click "BibTeX" → copy the text', 'Paste it in the box on the left'],
-    'sp-steps-semantic':  ['Search and find your paper', 'Click "Cite" on the paper page', 'Select "BibTeX" format → copy', 'Paste it in the box on the left'],
-    'badge-hint':         'Click to mark as checked / uncheck',
-    'btn-autofetch':      '✨ Auto-fetch BibTeX',
-    'fetch-loading':      'Searching Semantic Scholar…',
-    'fetch-ok':           s => `✅ Found: ${s}`,
-    'fetch-low':          s => `⚠️ Low confidence match: ${s} — check before replacing`,
-    'fetch-notfound':     '❌ Not found in Semantic Scholar or CrossRef',
-    'fetch-error':        '❌ Network error — try again',
-    'diff-title':         'Differences',
-    'diff-same':          '✅ No differences — content is identical',
-    'toast-parsed':       n => `Parsed ${n} entries`,
-    'toast-no-content':   'Paste your .bib content first',
-    'toast-no-entries':   'No entries found — check your BibTeX format',
-    'toast-no-new-bib':   'Paste the new BibTeX first',
-    'toast-not-found':    k => `Could not find @${k}`,
-    'toast-replaced':     '✅ Entry replaced',
-    'toast-nothing':      'Nothing to download',
-    'toast-downloading':  'Downloading main.bib',
-    'toast-undo':         '↩ Undone',
-    'toast-no-undo':      'Nothing to undo',
-    'toast-copied-url':   'URL copied to clipboard',
-    'stats-pending':      n => `⏳ ${n} pending`,
-    'stats-ok':           n => `✅ ${n} ok`,
-    'stats-replaced':     n => `🔄 ${n} replaced`,
-    'lang-btn':           '中文',
-  },
-  zh: {
-    'title':              '📚 BibTeX 参考文献核查工具',
-    'download':           '⬇ 下载 .bib',
-    'bib-source':         'BibTeX 内容',
-    'parse-btn':          '解析条目 →',
-    'bib-placeholder':    '将 .bib 文件内容粘贴到此处，然后点击"解析条目"→',
-    'list-placeholder':   '解析条目后开始核查',
-    'checker-placeholder':'从上方列表选择一条参考文献进行核查',
-    'btn-scholar':        '🔍 Google 学术',
-    'btn-semantic':       '📖 Semantic Scholar',
-    'new-bib-label':      '粘贴新 BibTeX（学术 → 引用 → BibTeX）：',
-    'new-bib-placeholder':'@inproceedings{key,\n  title={...},\n  author={...},\n  year={...},\n  booktitle={...}\n}',
-    'keep-key-label':     '保留原始 key：',
-    'btn-replace':        '✅ 替换条目',
-    'btn-keep':           '👍 保持不变',
-    'btn-prev':           '← 上一条',
-    'btn-next':           '下一条 →',
-    'btn-undo':           '↩ 撤销',
-    'sp-panel-title':     '🔍 检索参考文献',
-    'sp-searching':       '正在搜索',
-    'sp-open-scholar':    '🔍 打开 Google 学术',
-    'sp-open-semantic':   '📖 打开 Semantic Scholar',
-    'sp-side-hint':       '在屏幕右侧贴边打开新窗口',
-    'sp-steps-title':     '如何获取 BibTeX',
-    'sp-copy':            '复制链接',
-    'sp-steps-scholar':   ['搜索并找到目标论文', '点击结果下方的"引用"(⟨⟩)', '点击"BibTeX"→ 复制全文', '粘贴到左侧输入框'],
-    'sp-steps-semantic':  ['搜索并找到目标论文', '在论文页点击"Cite"', '选择 BibTeX 格式 → 复制', '粘贴到左侧输入框'],
-    'badge-hint':         '点击标记为已核查 / 取消标记',
-    'btn-autofetch':      '✨ 自动获取 BibTeX',
-    'fetch-loading':      '正在检索 Semantic Scholar…',
-    'fetch-ok':           s => `✅ 已找到：${s}`,
-    'fetch-low':          s => `⚠️ 匹配度较低：${s} — 请确认后替换`,
-    'fetch-notfound':     '❌ Semantic Scholar 和 CrossRef 均未找到',
-    'fetch-error':        '❌ 网络错误，请重试',
-    'diff-title':         '差异对比',
-    'diff-same':          '✅ 内容相同，无差异',
-    'toast-parsed':       n => `已解析 ${n} 条参考文献`,
-    'toast-no-content':   '请先粘贴 .bib 内容',
-    'toast-no-entries':   '未找到条目，请检查 BibTeX 格式',
-    'toast-no-new-bib':   '请先粘贴新的 BibTeX',
-    'toast-not-found':    k => `找不到 @${k}`,
-    'toast-replaced':     '✅ 条目已替换',
-    'toast-nothing':      '没有内容可下载',
-    'toast-downloading':  '正在下载 main.bib',
-    'toast-undo':         '↩ 已撤销',
-    'toast-no-undo':      '没有可撤销的操作',
-    'toast-copied-url':   '链接已复制到剪贴板',
-    'stats-pending':      n => `⏳ ${n} 待检查`,
-    'stats-ok':           n => `✅ ${n} 已确认`,
-    'stats-replaced':     n => `🔄 ${n} 已替换`,
-    'lang-btn':           'English',
-  }
-};
-
-let lang = 'en';
-
-function t(key, ...args) {
-  const v = I18N[lang][key];
-  return typeof v === 'function' ? v(...args) : (v || key);
-}
-
-function applyLang() {
-  document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
-  document.querySelectorAll('[data-i18n]').forEach(el => {
-    el.textContent = t(el.dataset.i18n);
-  });
-  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
-    el.placeholder = t(el.dataset.i18nPlaceholder);
-  });
-  if (entries.length === 0) {
-    const lp = document.querySelector('#entry-list-wrap .entry-placeholder');
-    if (lp) lp.textContent = t('list-placeholder');
-  }
-  updateStats();
-  updateUndoBtn();
-}
-
-function toggleLang() {
-  lang = lang === 'en' ? 'zh' : 'en';
-  applyLang();
-  if (entries.length > 0) renderEntryList();
-}
-
-// ── State ─────────────────────────────────────────────────────────
-let entries = [];
+// ── State ─────────────────────────────────────────────────────
+let entries    = [];
 let currentIdx = -1;
-let undoHistory = [];   // [{text, statuses}]
+let undoHistory = [];
 
-// ── BibTeX parser ─────────────────────────────────────────────────
+// ── Step management ───────────────────────────────────────────
+// state: 'idle' | 'active' | 'done'
+let stepState = ['', 'idle', 'idle', 'idle', 'idle', 'idle']; // 1-indexed
+
+function setStep(n, state) {
+  stepState[n] = state;
+  const el  = document.getElementById('step-' + n);
+  const dot = document.getElementById('dot-' + n);
+  if (!el || !dot) return;
+  el.className = 'step ' + state;
+  if (state === 'active') {
+    dot.innerHTML = '<div class="step-spinner"></div>';
+  } else if (state === 'done') {
+    dot.innerHTML = '✓';
+  } else {
+    dot.innerHTML = n;
+  }
+}
+
+function resetSteps() {
+  for (let i = 1; i <= 5; i++) setStep(i, 'idle');
+}
+
+// ── BibTeX parser ─────────────────────────────────────────────
 function parseBib(text) {
   const results = [];
   let i = 0;
@@ -659,7 +513,7 @@ function cleanStr(s) {
           .replace(/\s+/g, ' ').trim();
 }
 
-// ── Parse & render ────────────────────────────────────────────────
+// ── Parse & render ────────────────────────────────────────────
 function reparsePreservingStatus() {
   const sm = {};
   entries.forEach(e => { sm[e.key] = e.status; });
@@ -669,88 +523,85 @@ function reparsePreservingStatus() {
 
 function parseAndRender() {
   const text = document.getElementById('bib-textarea').value;
-  if (!text.trim()) { showToast(t('toast-no-content')); return; }
+  if (!text.trim()) { showToast('请先粘贴 .bib 内容'); return; }
   entries = parseBib(text);
-  if (entries.length === 0) { showToast(t('toast-no-entries')); return; }
+  if (entries.length === 0) { showToast('未找到条目，请检查 BibTeX 格式'); return; }
   undoHistory = [];
   updateUndoBtn();
   renderEntryList();
   selectEntry(0);
-  showToast(t('toast-parsed', entries.length));
+  showToast(`已解析 ${entries.length} 条参考文献`);
 }
 
 function renderEntryList() {
   const wrap = document.getElementById('entry-list-wrap');
-  wrap.innerHTML = '';
+  const empty = document.getElementById('list-empty');
+  // remove old rows
+  wrap.querySelectorAll('.entry-row').forEach(r => r.remove());
   if (entries.length === 0) {
-    wrap.innerHTML = `<div class="entry-placeholder">${t('list-placeholder')}</div>`;
+    if (empty) empty.style.display = '';
     return;
   }
-  const hint = t('badge-hint');
+  if (empty) empty.style.display = 'none';
   entries.forEach((e, i) => {
     const div = document.createElement('div');
-    div.className = 'entry-item' + (i === currentIdx ? ' active' : '');
+    div.className = 'entry-row' + (i === currentIdx ? ' active' : '');
     div.dataset.idx = i;
     div.onclick = () => selectEntry(i);
     const badge = e.status === 'ok' ? '✅' : e.status === 'replaced' ? '🔄' : '⏳';
     div.innerHTML =
-      `<span class="entry-badge" title="${hint}" data-idx="${i}" onclick="toggleStatus(${i},event)">${badge}</span>` +
+      `<span class="entry-badge" onclick="toggleStatus(${i},event)" title="点击切换状态">${badge}</span>` +
       `<span class="entry-key" title="${e.key}">${e.key}</span>` +
-      `<span class="entry-title-small" title="${e.title}">${e.title}</span>`;
+      `<span class="entry-ttl" title="${e.title}">${e.title}</span>`;
     wrap.appendChild(div);
   });
   updateStats();
 }
 
-// ── Toggle status by clicking badge ──────────────────────────────
+// ── Toggle status ─────────────────────────────────────────────
 function toggleStatus(idx, event) {
   event.stopPropagation();
   pushHistory();
   const e = entries[idx];
-  if (e.status === 'pending') {
-    e.status = 'ok';
-  } else if (e.status === 'ok') {
-    e.status = 'pending';
-  }
-  // 'replaced' stays replaced (don't toggle)
+  if (e.status === 'pending') e.status = 'ok';
+  else if (e.status === 'ok') e.status = 'pending';
   renderEntryList();
   updateStats();
 }
 
-// ── Select entry ──────────────────────────────────────────────────
+// ── Select entry ──────────────────────────────────────────────
 function selectEntry(idx) {
   if (idx < 0 || idx >= entries.length) return;
   currentIdx = idx;
   const e = entries[idx];
 
-  document.querySelectorAll('.entry-item').forEach((el, i) => {
+  document.querySelectorAll('.entry-row').forEach((el, i) => {
     el.classList.toggle('active', i === idx);
     if (i === idx) el.scrollIntoView({ block: 'nearest' });
   });
 
   highlightInBib(e);
 
-  document.getElementById('checker-placeholder').style.display = 'none';
-  const ac = document.getElementById('active-checker');
-  ac.style.display = 'flex';
+  document.getElementById('no-entry-msg').style.display = 'none';
+  const aw = document.getElementById('active-workflow');
+  aw.style.display = 'flex';
 
-  const authShort = e.authors.length > 100 ? e.authors.slice(0, 100) + '…' : e.authors;
-  document.getElementById('entry-info').innerHTML =
-    `<div class="info-title">${e.title}</div>` +
-    `<div class="info-row">` +
-    (e.authors ? `<b>${lang==='zh'?'作者':'Authors'}:</b> ${authShort}<br>` : '') +
-    (e.year    ? `<b>${lang==='zh'?'年份':'Year'}:</b> ${e.year}` : '') +
+  const authShort = e.authors.length > 90 ? e.authors.slice(0, 90) + '…' : e.authors;
+  document.getElementById('entry-card').innerHTML =
+    `<div class="ec-title">${e.title}</div>` +
+    `<div class="ec-meta">` +
+    (e.authors ? `<b>作者：</b>${authShort}<br>` : '') +
+    (e.year    ? `<b>年份：</b>${e.year}` : '') +
     (e.year && e.venue ? ' &nbsp;·&nbsp; ' : '') +
-    (e.venue   ? `<b>${lang==='zh'?'来源':'Venue'}:</b> ${e.venue.slice(0,80)}` : '') +
-    `<br><b>Type:</b> @${e.type} &nbsp; <b>Key:</b> <code>${e.key}</code>` +
+    (e.venue   ? `<b>来源：</b>${e.venue.slice(0, 80)}` : '') +
+    `<br><b>类型：</b>@${e.type} &nbsp;&nbsp; <b>Key：</b><code>${e.key}</code>` +
     `</div>`;
 
   document.getElementById('key-display').textContent = e.key;
   document.getElementById('new-bib').value = '';
-  document.getElementById('diff-view').style.display = 'none';
-  document.getElementById('fetch-status').className = 'fetch-status';
-  document.getElementById('fetch-status').innerHTML = '';
   document.getElementById('progress-text').textContent = `${idx + 1} / ${entries.length}`;
+  setFetchStatus('', '');
+  resetSteps();
   updateStats();
 }
 
@@ -772,7 +623,7 @@ function highlightInBib(entry) {
   ta.scrollTop = Math.max(0, (lines - 3) * lineH);
 }
 
-// ── Undo ──────────────────────────────────────────────────────────
+// ── Undo ──────────────────────────────────────────────────────
 function pushHistory() {
   undoHistory.push({
     text: document.getElementById('bib-textarea').value,
@@ -784,7 +635,7 @@ function pushHistory() {
 }
 
 function undoState() {
-  if (!undoHistory.length) { showToast(t('toast-no-undo')); return; }
+  if (!undoHistory.length) { showToast('没有可撤销的操作'); return; }
   const s = undoHistory.pop();
   document.getElementById('bib-textarea').value = s.text;
   reparsePreservingStatus();
@@ -795,108 +646,17 @@ function undoState() {
   renderEntryList();
   selectEntry(s.idx >= 0 && s.idx < entries.length ? s.idx : currentIdx);
   updateUndoBtn();
-  showToast(t('toast-undo'));
+  showToast('↩ 已撤销');
 }
 
 function updateUndoBtn() {
   const btn = document.getElementById('undo-btn');
   if (!btn) return;
   btn.disabled = undoHistory.length === 0;
-  btn.textContent = t('btn-undo') + (undoHistory.length > 0 ? ` (${undoHistory.length})` : '');
+  btn.textContent = undoHistory.length > 0 ? `↩ 撤销 (${undoHistory.length})` : '↩ 撤销';
 }
 
-// ── Auto-fetch BibTeX from Semantic Scholar + CrossRef ────────────
-function titleWords(s) {
-  return new Set(s.toLowerCase().replace(/[^a-z0-9 ]/g,' ').split(/\s+/).filter(Boolean));
-}
-function titleSim(a, b) {
-  const wa = titleWords(a), wb = titleWords(b);
-  if (!wa.size || !wb.size) return 0;
-  let inter = 0; for (const w of wa) if (wb.has(w)) inter++;
-  return inter / Math.max(wa.size, wb.size);
-}
-
-function setFetchStatus(cls, html) {
-  const el = document.getElementById('fetch-status');
-  el.className = 'fetch-status ' + cls;
-  el.innerHTML = html;
-}
-
-async function fetchFromS2(title) {
-  const q = encodeURIComponent(title);
-  const url = `https://api.semanticscholar.org/graph/v1/paper/search?query=${q}&limit=3&fields=title,authors,year,venue,publicationVenue,externalIds,publicationTypes,journal`;
-  const res = await fetch(url);
-  if (!res.ok) return null;
-  const data = await res.json();
-  for (const paper of (data.data || [])) {
-    if (titleSim(title, paper.title) >= 0.65) return paper;
-  }
-  return null;
-}
-
-async function fetchFromCrossRef(title) {
-  const q = encodeURIComponent(title);
-  const url = `https://api.crossref.org/works?query.title=${q}&rows=3&mailto=bib-checker@tool.com`;
-  const res = await fetch(url);
-  if (!res.ok) return null;
-  const data = await res.json();
-  for (const item of (data.message?.items || [])) {
-    const ct = (item.title || [''])[0];
-    if (titleSim(title, ct) >= 0.65) return item;
-  }
-  return null;
-}
-
-function formatFromS2(key, p) {
-  const isJournal = (p.publicationTypes || []).includes('JournalArticle');
-  const venue = p.publicationVenue?.name || p.journal?.name || p.venue || '';
-  const doi   = p.externalIds?.DOI  || '';
-  const arxiv = p.externalIds?.ArXiv || '';
-  const type  = isJournal ? 'article' : 'inproceedings';
-
-  const authorStr = (p.authors || []).map(a => {
-    const parts = a.name.trim().split(/\s+/);
-    if (parts.length === 1) return parts[0];
-    const last = parts.pop();
-    return `${last}, ${parts.join(' ')}`;
-  }).join(' and ');
-
-  let b = `@${type}{${key},\n`;
-  b += `  title     = {${p.title}},\n`;
-  b += `  author    = {${authorStr}},\n`;
-  if (p.year)   b += `  year      = {${p.year}},\n`;
-  if (venue)    b += `  ${isJournal ? 'journal  ' : 'booktitle'} = {${venue}},\n`;
-  if (doi)      b += `  doi       = {${doi}},\n`;
-  else if (arxiv) b += `  url       = {https://arxiv.org/abs/${arxiv}},\n`;
-  b += `}`;
-  return { bib: b, found: p.title, sim: titleSim(key, p.title || '') };
-}
-
-function formatFromCrossRef(key, item) {
-  const title  = (item.title || [''])[0];
-  const type   = item.type || '';
-  const isJournal = type.includes('journal');
-  const bibType = isJournal ? 'article' : 'inproceedings';
-  const venue  = (item['container-title'] || [''])[0];
-  const doi    = item.DOI || '';
-  const year   = String((item['published-print'] || item['published-online'] || item.created || {})?.['date-parts']?.[0]?.[0] || '');
-
-  const authorStr = (item.author || []).map(a => {
-    const family = a.family || '';
-    const given  = a.given  || '';
-    return given ? `${family}, ${given}` : family;
-  }).join(' and ');
-
-  let b = `@${bibType}{${key},\n`;
-  b += `  title     = {${title}},\n`;
-  if (authorStr) b += `  author    = {${authorStr}},\n`;
-  if (year)      b += `  year      = {${year}},\n`;
-  if (venue)     b += `  ${isJournal ? 'journal  ' : 'booktitle'} = {${venue}},\n`;
-  if (doi)       b += `  doi       = {${doi}},\n`;
-  b += `}`;
-  return { bib: b, found: title };
-}
-
+// ── Delay setting ─────────────────────────────────────────────
 let fetchDelay = parseInt(localStorage.getItem('bib-fetch-delay') || '3');
 
 function setFetchDelay(val) {
@@ -904,85 +664,28 @@ function setFetchDelay(val) {
   localStorage.setItem('bib-fetch-delay', fetchDelay);
 }
 
+// ── Status line ───────────────────────────────────────────────
+function setFetchStatus(cls, html) {
+  const el = document.getElementById('fetch-status');
+  el.className = 'status-line' + (cls ? ' ' + cls : '');
+  el.innerHTML = html;
+}
+
+// ── Auto-fetch ────────────────────────────────────────────────
 function autoFetchBib() {
   if (currentIdx < 0) return;
-  const url = getSearchUrl('scholar') + `&bib-checker=1&bib-delay=${fetchDelay}`;
-  chrome.runtime.sendMessage({ type: 'bib-ext-open-scholar', url });
-  setFetchStatus('loading', `<span class="spinner"></span> ${lang === 'zh' ? '已打开 Google Scholar，扩展自动运行中…' : 'Opened Google Scholar, extension running…'}`);
+  resetSteps();
+  setStep(1, 'active');
+  setFetchStatus('', '<span class="spinner"></span> 正在打开 Google Scholar…');
+  const url = `https://scholar.google.com/scholar?q=${encodeURIComponent(entries[currentIdx].title)}&bib-checker=1&bib-delay=${fetchDelay}`;
+  chrome.runtime.sendMessage({ type: 'bib-ext-open-scholar', url }, () => {
+    setStep(1, 'done');
+    setStep(2, 'active');
+    setFetchStatus('', '<span class="spinner"></span> 等待扩展点击 Cite…');
+  });
 }
 
-// ── Diff view ─────────────────────────────────────────────────────
-function updateDiffView() {
-  const diffEl = document.getElementById('diff-view');
-  const newBibText = document.getElementById('new-bib').value.trim();
-  if (!newBibText || currentIdx < 0) { diffEl.style.display = 'none'; return; }
-
-  const oldEntry = entries[currentIdx];
-  const oldFields = extractFields(oldEntry.raw);
-  const oldType = oldEntry.type;
-
-  // Parse new bib (wrap if user pasted only fields without @type{key,...})
-  let text = newBibText;
-  if (!text.startsWith('@')) text = `@misc{__tmp__,\n${text}\n}`;
-  const parsed = parseBib(text);
-  if (!parsed.length) { diffEl.style.display = 'none'; return; }
-  const newE = parsed[0];
-  const newFields = extractFields(newE.raw);
-  const newType = newE.type;
-
-  const rows = [];
-
-  // Type comparison
-  if (oldType !== newType) {
-    rows.push({ field: 'type', old: `@${oldType}`, new: `@${newType}`, status: 'changed' });
-  }
-
-  // Field comparison
-  const allFields = new Set([...Object.keys(oldFields), ...Object.keys(newFields)]);
-  allFields.delete('');
-  // Prioritized display order
-  const priority = ['title','author','year','booktitle','journal','volume','pages','publisher','doi','url','note'];
-  const sorted = [...priority.filter(f => allFields.has(f)), ...[...allFields].filter(f => !priority.includes(f))];
-
-  for (const f of sorted) {
-    if (['key'].includes(f)) continue;
-    const ov = cleanStr(oldFields[f] || '');
-    const nv = cleanStr(newFields[f] || '');
-    if (!ov && !nv) continue;
-    if (ov === nv) continue;
-    rows.push({
-      field: f,
-      old: ov || '',
-      new: nv || '',
-      status: !ov ? 'added' : !nv ? 'removed' : 'changed',
-    });
-  }
-
-  if (!rows.length) {
-    diffEl.innerHTML = `<div class="diff-same-msg">${t('diff-same')}</div>`;
-    diffEl.style.display = 'block';
-    return;
-  }
-
-  const trunc = s => s.length > 90 ? s.slice(0, 90) + '…' : s;
-  let html = `<div class="diff-title">${t('diff-title')}</div><table class="diff-table">`;
-  for (const r of rows) {
-    html += `<tr class="diff-${r.status}">
-      <td class="diff-field">${r.field}</td>
-      <td class="diff-old">${r.status !== 'added'   ? trunc(r.old) : '<span style="color:#9ca3af">—</span>'}</td>
-      <td class="diff-arrow">→</td>
-      <td class="diff-new">${r.status !== 'removed' ? trunc(r.new) : '<span style="color:#9ca3af">—</span>'}</td>
-    </tr>`;
-  }
-  html += '</table>';
-  diffEl.innerHTML = html;
-  diffEl.style.display = 'block';
-}
-
-// ── Search side panel (画中画 launcher) ───────────────────────────
-let currentSearchTab = 'scholar';
-let _sideWindow = null;
-
+// ── Search URL ────────────────────────────────────────────────
 function getSearchUrl(service) {
   if (currentIdx < 0) return '';
   const q = encodeURIComponent(entries[currentIdx].title);
@@ -991,108 +694,11 @@ function getSearchUrl(service) {
     : `https://www.semanticscholar.org/search?q=${q}&sort=Relevance`;
 }
 
-function openDirect(service) {
-  if (currentIdx < 0) return;
-  let url = getSearchUrl(service);
-  if (service === 'scholar') {
-    url += `&bib-checker=1&bib-delay=${fetchDelay}`;
-    chrome.runtime.sendMessage({ type: 'bib-ext-open-scholar', url });
-  } else {
-    window.open(url, '_blank');
-  }
-}
-
-function openSearch(service) {
-  if (currentIdx < 0) return;
-  currentSearchTab = service;
-  updateSearchPanel(service);
-  document.getElementById('search-panel').classList.add('open');
-  document.getElementById('sp-overlay').classList.add('show');
-}
-
-function switchTab(service) {
-  currentSearchTab = service;
-  updateSearchPanel(service);
-}
-
-function updateSearchPanel(service) {
-  const url = getSearchUrl(service);
-  const e = entries[currentIdx];
-
-  // Tabs
-  document.getElementById('sp-tab-scholar').classList.toggle('active',  service === 'scholar');
-  document.getElementById('sp-tab-semantic').classList.toggle('active', service === 'semantic');
-
-  // Paper title
-  document.getElementById('sp-paper-title').textContent = e ? e.title : '';
-
-  // Primary action button
-  document.getElementById('sp-side-scholar-btn').style.display  = service === 'scholar'  ? '' : 'none';
-  document.getElementById('sp-side-semantic-btn').style.display = service === 'semantic' ? '' : 'none';
-
-  // URL bar
-  document.getElementById('sp-url-display').textContent = url;
-
-  // Steps
-  const steps = t('sp-steps-' + service);
-  const stepsHtml = steps.map((s, i) =>
-    `<div class="sp-step"><div class="sp-step-num">${i+1}</div><div>${s}</div></div>`
-  ).join('');
-  document.getElementById('sp-steps').innerHTML = stepsHtml;
-}
-
-function openSideWindow(service) {
-  const url = getSearchUrl(service);
-  if (!url) return;
-
-  const totalW = screen.availWidth;
-  const totalH = screen.availHeight;
-  const screenLeft = screen.availLeft;
-  const screenTop  = screen.availTop;
-
-  const sideW = Math.round(totalW * 0.48);
-  const mainW = totalW - sideW;
-
-  // Try to snap main window to left half
-  try {
-    window.moveTo(screenLeft, screenTop);
-    window.resizeTo(mainW, totalH);
-  } catch(e) { /* restricted in regular tabs — ignore */ }
-
-  // Scholar window on the right half
-  const sideLeft = screenLeft + mainW;
-  if (_sideWindow && !_sideWindow.closed) {
-    _sideWindow.location.href = url;
-    try {
-      _sideWindow.moveTo(sideLeft, screenTop);
-      _sideWindow.resizeTo(sideW, totalH);
-    } catch(e) {}
-    _sideWindow.focus();
-  } else {
-    _sideWindow = window.open(
-      url, 'bib_search_panel',
-      `width=${sideW},height=${totalH},left=${sideLeft},top=${screenTop},resizable=yes,scrollbars=yes,toolbar=yes`
-    );
-  }
-  closeSearchPanel();
-}
-
-function copySearchUrl() {
-  const url = getSearchUrl(currentSearchTab);
-  if (!url) return;
-  navigator.clipboard.writeText(url).then(() => showToast(t('toast-copied-url')));
-}
-
-function closeSearchPanel() {
-  document.getElementById('search-panel').classList.remove('open');
-  document.getElementById('sp-overlay').classList.remove('show');
-}
-
-// ── Actions ───────────────────────────────────────────────────────
+// ── Actions ───────────────────────────────────────────────────
 function replaceEntry() {
   if (currentIdx < 0) return;
   let newBib = document.getElementById('new-bib').value.trim();
-  if (!newBib) { showToast(t('toast-no-new-bib')); return; }
+  if (!newBib) { showToast('没有新的 BibTeX 内容'); return; }
   const e = entries[currentIdx];
   if (document.getElementById('keep-key').checked) {
     newBib = newBib.replace(/^(@\w+\s*\{\s*)[\w:._\-]+/, `$1${e.key}`);
@@ -1101,7 +707,7 @@ function replaceEntry() {
   const text = ta.value;
   const re = new RegExp('@\\w+\\s*\\{\\s*' + escapeRe(e.key) + '\\s*,', 'i');
   const m = re.exec(text);
-  if (!m) { showToast(t('toast-not-found', e.key)); return; }
+  if (!m) { showToast(`找不到 @${e.key}`); return; }
   pushHistory();
   let depth = 0, i = m.index;
   for (; i < text.length; i++) {
@@ -1113,11 +719,11 @@ function replaceEntry() {
   const newIdx = entries.findIndex(x => x.key === e.key);
   if (newIdx !== -1) { entries[newIdx].status = 'replaced'; currentIdx = newIdx; }
   renderEntryList();
-  showToast(t('toast-replaced'));
+  showToast('✅ 条目已替换');
   setTimeout(() => {
     const ni = findNextPending(newIdx !== -1 ? newIdx : currentIdx);
     selectEntry(ni !== -1 ? ni : currentIdx);
-  }, 350);
+  }, 300);
 }
 
 function keepOriginal() {
@@ -1150,20 +756,19 @@ function updateStats() {
   const ok       = entries.filter(e => e.status === 'ok').length;
   const replaced = entries.filter(e => e.status === 'replaced').length;
   document.getElementById('stats').innerHTML =
-    `<span>${t('stats-pending', pending)}</span>` +
-    `<span>${t('stats-ok', ok)}</span>` +
-    `<span>${t('stats-replaced', replaced)}</span>`;
+    `<span class="stat-chip pending">⏳ ${pending}</span>` +
+    `<span class="stat-chip ok">✅ ${ok}</span>` +
+    `<span class="stat-chip replaced">🔄 ${replaced}</span>`;
 }
 
 function downloadBib() {
   const text = document.getElementById('bib-textarea').value;
-  if (!text.trim()) { showToast(t('toast-nothing')); return; }
-  const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+  if (!text.trim()) { showToast('没有内容可下载'); return; }
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
+  a.href = URL.createObjectURL(new Blob([text], { type: 'text/plain;charset=utf-8' }));
   a.download = 'main.bib';
   a.click();
-  showToast(t('toast-downloading'));
+  showToast('正在下载 main.bib');
 }
 
 function escapeRe(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
@@ -1176,74 +781,48 @@ function showToast(msg) {
   el._timer = setTimeout(() => el.classList.remove('show'), 2200);
 }
 
-// ── Receive BibTeX from Scholar extension ─────────────────────────
+// ── Receive messages from extension ──────────────────────────
 chrome.runtime.onMessage.addListener((msg) => {
-  if (msg.type !== 'bib-checker-bib') return;
-  const bib = msg.bib;
-  if (!bib || currentIdx < 0) return;
-  document.getElementById('new-bib').value = bib;
-  updateDiffView();
-  setFetchStatus('ok', lang === 'zh' ? '✅ 已从 Google Scholar 获取，正在替换…' : '✅ Received, replacing…');
-  closeScholarWindow();
-  // Auto-replace, then auto-fetch next entry
-  setTimeout(() => {
-    replaceEntry();
-    const next = findNextPending(currentIdx);
-    if (next !== -1) {
-      setFetchStatus('ok', lang === 'zh' ? `✅ 已替换，${fetchDelay} 秒后获取下一条…` : `✅ Replaced, fetching next in ${fetchDelay} s…`);
-      setTimeout(() => autoFetchBib(), fetchDelay * 1000);
-    } else {
-      setFetchStatus('ok', lang === 'zh' ? '🎉 所有条目已处理完毕' : '🎉 All entries processed');
-    }
-  }, 400);
+  if (msg.type === 'scholar-progress') {
+    // Mark steps 1..(msg.step-1) as done, msg.step as active
+    for (let i = 1; i < msg.step; i++) setStep(i, 'done');
+    setStep(msg.step, 'active');
+    const labels = ['', '打开 Scholar', '点击 Cite', '点击 BibTeX', '获取内容', '替换条目'];
+    setFetchStatus('', `<span class="spinner"></span> 正在执行：${labels[msg.step]}…`);
+    return;
+  }
+
+  if (msg.type === 'bib-checker-bib') {
+    const bib = msg.bib;
+    if (!bib || currentIdx < 0) return;
+    // Steps 1-4 done, step 5 active
+    for (let i = 1; i <= 4; i++) setStep(i, 'done');
+    setStep(5, 'active');
+    setFetchStatus('', '<span class="spinner"></span> BibTeX 已获取，正在替换…');
+    document.getElementById('new-bib').value = bib;
+    setTimeout(() => {
+      replaceEntry();
+      setStep(5, 'done');
+      const next = findNextPending(currentIdx);
+      if (next !== -1) {
+        setFetchStatus('ok', `✅ 已替换，${fetchDelay} 秒后获取下一条…`);
+        setTimeout(() => autoFetchBib(), fetchDelay * 1000);
+      } else {
+        setFetchStatus('ok', '🎉 所有条目已处理完毕');
+      }
+    }, 400);
+  }
 });
 
-function closeScholarWindow() {
-  if (_sideWindow && !_sideWindow.closed) {
-    _sideWindow.close();
-    _sideWindow = null;
-  }
-}
-
+// ── Keyboard shortcuts ────────────────────────────────────────
 document.addEventListener('keydown', e => {
   if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
-  if (e.key === 'Escape') { closeSearchPanel(); return; }
   if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); navigate(1); }
   if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   { e.preventDefault(); navigate(-1); }
   if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undoState(); }
 });
 
-// ── Auto-replace on paste ─────────────────────────────────────────
-function isCompleteBib(text) {
-  const t = text.trim();
-  if (!t.startsWith('@')) return false;
-  let depth = 0;
-  for (const ch of t) {
-    if (ch === '{') depth++;
-    else if (ch === '}') { depth--; if (depth === 0) return true; }
-  }
-  return false;
-}
-
-document.getElementById('new-bib').addEventListener('paste', () => {
-  setTimeout(() => updateDiffView(), 30);
-});
-
-// Paste anywhere on the page (not in a focused input) → fill new-bib + show diff
-document.addEventListener('paste', (e) => {
-  if (e.target.id === 'new-bib' || e.target.id === 'bib-textarea') return;
-  if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
-  if (currentIdx < 0) return;
-  const text = (e.clipboardData || window.clipboardData).getData('text/plain');
-  if (isCompleteBib(text)) {
-    document.getElementById('new-bib').value = text;
-    updateDiffView();
-    closeScholarWindow();
-    e.preventDefault();
-  }
-});
-
-// ── Persist bib content across refreshes ─────────────────────────
+// ── Persist bib content ───────────────────────────────────────
 let _saveTimer;
 function saveBib() {
   clearTimeout(_saveTimer);
@@ -1252,16 +831,13 @@ function saveBib() {
   }, 600);
 }
 
-// Init
-lang = 'zh';
-applyLang();
+// ── Init ─────────────────────────────────────────────────────
+document.getElementById('delay-select').value = fetchDelay;
 const _saved = localStorage.getItem('bib-checker-content');
 if (_saved) {
   document.getElementById('bib-textarea').value = _saved;
   parseAndRender();
 }
-// Restore delay selector
-document.getElementById('delay-select').value = fetchDelay;
 </script>
 </body>
 </html>
