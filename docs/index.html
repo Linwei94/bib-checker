@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>DeHallucinate Reference Checker — Catch AI-Hallucinated Citations</title>
+<meta name="description" content="Free Chrome extension to detect and fix AI-hallucinated references in your BibTeX. Verify every citation against Google Scholar before submitting to ICML, ICLR, NeurIPS, ACL, CVPR.">
+<meta name="keywords" content="AI hallucination reference checker, BibTeX checker, hallucinated citations, fake references AI, ICML reference check, ICLR citation verifier, NeurIPS bibliography checker, LLM hallucination detection, ChatGPT fake citations, AI generated references, Google Scholar BibTeX, citation verification tool">
+
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="DeHallucinate Reference Checker — Catch AI-Hallucinated Citations">
+<meta property="og:description" content="Stop submitting fake AI-generated citations to top venues. DeHallucinate verifies your entire BibTeX against Google Scholar in one click.">
+<meta property="og:url" content="https://linwei94.github.io/bib-checker/">
+
+<!-- Schema.org -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "DeHallucinate",
+  "applicationCategory": "BrowserApplication",
+  "operatingSystem": "Chrome",
+  "description": "Chrome extension that detects and fixes AI-hallucinated references in BibTeX files by verifying against Google Scholar.",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+  "keywords": "hallucinated references, BibTeX checker, AI citations, Google Scholar"
+}
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --blue:   #2563eb;
+  --indigo: #4f46e5;
+  --purple: #7c3aed;
+  --green:  #059669;
+  --amber:  #d97706;
+  --dark:   #0f172a;
+  --card:   #1e293b;
+  --muted:  #94a3b8;
+  --border: rgba(255,255,255,.08);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--dark);
+  color: #e2e8f0;
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+/* ── Utilities ─────────────────────────────────────────── */
+.container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+.reveal { opacity: 0; transform: translateY(28px); transition: opacity .6s ease, transform .6s ease; }
+.reveal.visible { opacity: 1; transform: none; }
+.reveal-delay-1 { transition-delay: .1s; }
+.reveal-delay-2 { transition-delay: .2s; }
+.reveal-delay-3 { transition-delay: .3s; }
+.reveal-delay-4 { transition-delay: .4s; }
+
+/* ── Nav ───────────────────────────────────────────────── */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  padding: 14px 24px;
+  display: flex; align-items: center; gap: 12px;
+  background: rgba(15,23,42,.8);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  transition: background .3s;
+}
+.nav-logo { font-size: 15px; font-weight: 800; color: white; text-decoration: none; display: flex; align-items: center; gap: 8px; }
+.nav-logo-icon { font-size: 18px; }
+.nav-links { margin-left: auto; display: flex; gap: 6px; align-items: center; }
+.nav-link { color: var(--muted); text-decoration: none; font-size: 13px; font-weight: 500; padding: 6px 12px; border-radius: 6px; transition: color .2s, background .2s; }
+.nav-link:hover { color: white; background: rgba(255,255,255,.07); }
+.nav-cta {
+  background: var(--blue); color: white; text-decoration: none;
+  font-size: 13px; font-weight: 600; padding: 7px 16px; border-radius: 8px;
+  transition: opacity .2s, transform .15s;
+}
+.nav-cta:hover { opacity: .88; transform: translateY(-1px); }
+.lang-toggle { color: var(--muted); font-size: 12px; font-weight: 600; cursor: pointer; padding: 5px 10px; border-radius: 5px; border: 1px solid var(--border); background: none; transition: all .2s; }
+.lang-toggle:hover { color: white; border-color: rgba(255,255,255,.2); }
+
+/* ── Hero ──────────────────────────────────────────────── */
+.hero {
+  min-height: 100vh;
+  display: flex; align-items: center;
+  padding: 120px 0 80px;
+  position: relative; overflow: hidden;
+}
+
+/* Animated gradient orbs */
+.hero::before, .hero::after {
+  content: '';
+  position: absolute; border-radius: 50%;
+  filter: blur(80px); opacity: .35;
+  animation: orbDrift 12s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+.hero::before {
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, #4f46e5, transparent 70%);
+  top: -100px; left: -150px;
+}
+.hero::after {
+  width: 500px; height: 500px;
+  background: radial-gradient(circle, #7c3aed, transparent 70%);
+  bottom: -100px; right: -100px;
+  animation-delay: -6s;
+}
+@keyframes orbDrift {
+  from { transform: translate(0, 0) scale(1); }
+  to   { transform: translate(40px, 30px) scale(1.08); }
+}
+
+.hero-inner {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 60px; align-items: center;
+}
+
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 7px;
+  background: rgba(79,70,229,.2); border: 1px solid rgba(79,70,229,.4);
+  color: #a5b4fc; font-size: 12px; font-weight: 600;
+  padding: 5px 12px; border-radius: 20px;
+  margin-bottom: 20px;
+  animation: fadeDown .6s ease both;
+}
+.badge-dot { width: 6px; height: 6px; background: #818cf8; border-radius: 50%; animation: blink 2s ease-in-out infinite; }
+@keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
+@keyframes fadeDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: none; } }
+
+.hero-title {
+  font-size: clamp(2.6rem, 5vw, 3.8rem);
+  font-weight: 900; line-height: 1.1; letter-spacing: -.03em;
+  animation: fadeUp .7s ease .1s both;
+}
+.hero-title .word-gradient {
+  background: linear-gradient(135deg, #818cf8, #c084fc, #f472b6);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+@keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: none; } }
+
+.hero-sub {
+  margin-top: 18px; font-size: 1.1rem; color: #94a3b8; line-height: 1.7;
+  max-width: 480px;
+  animation: fadeUp .7s ease .2s both;
+}
+
+.hero-venues {
+  margin-top: 14px; font-size: 12px; color: #64748b; font-weight: 500;
+  animation: fadeUp .7s ease .25s both;
+}
+.hero-venues span { color: #94a3b8; font-weight: 600; }
+
+.hero-btns {
+  display: flex; gap: 12px; margin-top: 32px; flex-wrap: wrap;
+  animation: fadeUp .7s ease .3s both;
+}
+.btn-primary {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: linear-gradient(135deg, var(--indigo), var(--purple));
+  color: white; text-decoration: none;
+  font-size: 14px; font-weight: 700; padding: 12px 24px; border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(79,70,229,.4);
+  transition: transform .2s, box-shadow .2s;
+}
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(79,70,229,.5); }
+.btn-secondary {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(255,255,255,.06); border: 1px solid var(--border);
+  color: #cbd5e1; text-decoration: none;
+  font-size: 14px; font-weight: 600; padding: 12px 20px; border-radius: 10px;
+  transition: background .2s, border-color .2s;
+}
+.btn-secondary:hover { background: rgba(255,255,255,.1); border-color: rgba(255,255,255,.2); }
+
+/* ── Extension mockup ──────────────────────────────────── */
+.hero-mockup {
+  position: relative;
+  animation: floatCard 5s ease-in-out infinite;
+}
+@keyframes floatCard {
+  0%,100% { transform: translateY(0) rotate(.5deg); }
+  50%      { transform: translateY(-14px) rotate(-.5deg); }
+}
+
+.mockup-window {
+  background: #1a2535; border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.1);
+  box-shadow: 0 30px 80px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.05);
+  overflow: hidden; font-size: 11px;
+}
+.mockup-bar {
+  background: #131f2e; padding: 9px 14px;
+  display: flex; align-items: center; gap: 10px;
+  border-bottom: 1px solid rgba(255,255,255,.07);
+}
+.mockup-dots { display: flex; gap: 5px; }
+.mockup-dots span { width: 10px; height: 10px; border-radius: 50%; }
+.mockup-dots span:nth-child(1) { background: #ef4444; }
+.mockup-dots span:nth-child(2) { background: #f59e0b; }
+.mockup-dots span:nth-child(3) { background: #22c55e; }
+.mockup-title { color: #64748b; font-size: 11px; font-weight: 600; font-family: 'Inter', sans-serif; }
+.mockup-badge { margin-left: auto; background: #065f46; color: #6ee7b7; font-size: 9px; font-weight: 700; padding: 2px 8px; border-radius: 10px; }
+
+.mockup-header {
+  background: linear-gradient(135deg, #1e40af, #2563eb);
+  padding: 7px 12px;
+  display: flex; align-items: center; gap: 8px;
+  font-family: 'Inter', sans-serif;
+}
+.mockup-header-title { font-size: 11px; font-weight: 700; color: white; }
+.mockup-stat { background: rgba(255,255,255,.18); color: #fde68a; font-size: 9px; font-weight: 700; padding: 2px 7px; border-radius: 10px; }
+.mockup-stat.green { color: #6ee7b7; }
+.mockup-stat.blue { color: #bfdbfe; }
+
+.mockup-diff { padding: 10px; font-family: 'JetBrains Mono', monospace; }
+.mockup-table { width: 100%; border-collapse: collapse; font-size: 10px; }
+.mockup-table th { color: #475569; font-size: 9px; text-transform: uppercase; letter-spacing: .05em; padding: 4px 8px; border-bottom: 1px solid rgba(255,255,255,.07); text-align: left; }
+.mockup-table td { padding: 5px 8px; border-bottom: 1px solid rgba(255,255,255,.04); vertical-align: top; line-height: 1.5; }
+.td-field { color: #475569; font-size: 9.5px; width: 52px; }
+.row-same td { color: #475569; }
+.row-changed .td-old { color: #92400e; background: rgba(251,191,36,.08); }
+.row-changed .td-new { color: #065f46; background: rgba(52,211,153,.08); }
+.row-changed .td-field { color: #d97706; }
+mark.hl { background: rgba(251,191,36,.5); color: #78350f; border-radius: 2px; padding: 0 1px; }
+mark.hl-g { background: rgba(52,211,153,.5); color: #064e3b; border-radius: 2px; padding: 0 1px; }
+
+.mockup-actions {
+  background: #131f2e; padding: 8px 10px;
+  display: flex; gap: 7px; align-items: center;
+  border-top: 1px solid rgba(255,255,255,.07);
+}
+.mock-btn-keep { background: rgba(255,255,255,.07); color: #94a3b8; border: none; border-radius: 5px; padding: 5px 10px; font-size: 9px; font-weight: 700; font-family: 'Inter', sans-serif; cursor: default; }
+.mock-btn-replace { background: #059669; color: white; border: none; border-radius: 5px; padding: 5px 12px; font-size: 9px; font-weight: 700; font-family: 'Inter', sans-serif; cursor: default; box-shadow: 0 1px 4px rgba(5,150,105,.4); }
+.mock-replace-all { background: linear-gradient(135deg, #1d4ed8, #7c3aed); color: white; border: none; border-radius: 5px; padding: 5px 12px; font-size: 9px; font-weight: 700; font-family: 'Inter', sans-serif; cursor: default; margin-left: auto; }
+
+/* glow ring */
+.mockup-glow {
+  position: absolute; inset: -2px; border-radius: 14px;
+  background: linear-gradient(135deg, rgba(79,70,229,.5), rgba(124,58,237,.5));
+  z-index: -1; filter: blur(12px); opacity: .6;
+  animation: glowPulse 3s ease-in-out infinite;
+}
+@keyframes glowPulse { 0%,100% { opacity: .4; } 50% { opacity: .75; } }
+
+/* ── Problem section ───────────────────────────────────── */
+.problem {
+  padding: 100px 0;
+  background: linear-gradient(to bottom, transparent, rgba(30,41,59,.5), transparent);
+}
+.section-label {
+  font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+  color: #818cf8; margin-bottom: 12px;
+}
+.section-title {
+  font-size: clamp(1.7rem, 3vw, 2.4rem); font-weight: 800;
+  letter-spacing: -.02em; line-height: 1.2; color: white;
+}
+.section-sub { margin-top: 14px; font-size: 1rem; color: var(--muted); max-width: 560px; line-height: 1.7; }
+
+.problem-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 24px; margin-top: 48px;
+}
+.problem-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 14px; padding: 24px;
+  transition: border-color .25s, transform .25s;
+}
+.problem-card:hover { border-color: rgba(79,70,229,.4); transform: translateY(-3px); }
+.problem-icon { font-size: 24px; margin-bottom: 12px; }
+.problem-card h3 { font-size: 15px; font-weight: 700; color: white; margin-bottom: 7px; }
+.problem-card p { font-size: 13px; color: var(--muted); line-height: 1.65; }
+
+/* Fake citation demo */
+.fake-cite {
+  font-family: 'JetBrains Mono', monospace; font-size: 11px;
+  background: rgba(239,68,68,.08); border: 1px solid rgba(239,68,68,.2);
+  border-radius: 8px; padding: 12px; margin-top: 12px; color: #fca5a5;
+  position: relative; overflow: hidden;
+}
+.fake-cite::before {
+  content: '⚠ NOT FOUND ON SCHOLAR';
+  position: absolute; top: 6px; right: 8px;
+  font-size: 8px; font-weight: 700; color: #f87171; letter-spacing: .05em;
+}
+.fake-cite .strike { text-decoration: line-through; opacity: .6; }
+
+/* ── How it works ──────────────────────────────────────── */
+.how { padding: 100px 0; }
+.steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; margin-top: 56px; }
+.step {
+  position: relative; text-align: center;
+}
+.step::after {
+  content: '→';
+  position: absolute; top: 28px; right: -18px;
+  font-size: 20px; color: #334155;
+  display: none;
+}
+@media (min-width: 768px) {
+  .step:not(:last-child)::after { display: block; }
+}
+.step-num {
+  width: 56px; height: 56px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--indigo), var(--purple));
+  color: white; font-size: 18px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 16px;
+  box-shadow: 0 4px 16px rgba(79,70,229,.4);
+  transition: transform .25s, box-shadow .25s;
+}
+.step:hover .step-num { transform: scale(1.1); box-shadow: 0 6px 24px rgba(79,70,229,.5); }
+.step-icon { font-size: 22px; margin-bottom: 4px; }
+.step h3 { font-size: 15px; font-weight: 700; color: white; margin-bottom: 8px; }
+.step p { font-size: 13px; color: var(--muted); line-height: 1.65; }
+
+/* ── Features ──────────────────────────────────────────── */
+.features { padding: 100px 0; background: rgba(30,41,59,.3); }
+.features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 56px; }
+.feat-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 14px; padding: 24px;
+  transition: border-color .25s, transform .25s, box-shadow .25s;
+}
+.feat-card:hover { border-color: rgba(79,70,229,.35); transform: translateY(-4px); box-shadow: 0 12px 32px rgba(0,0,0,.3); }
+.feat-icon {
+  width: 44px; height: 44px; border-radius: 10px;
+  background: linear-gradient(135deg, rgba(79,70,229,.25), rgba(124,58,237,.25));
+  border: 1px solid rgba(79,70,229,.3);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; margin-bottom: 14px;
+}
+.feat-card h3 { font-size: 14px; font-weight: 700; color: white; margin-bottom: 7px; }
+.feat-card p { font-size: 13px; color: var(--muted); line-height: 1.65; }
+
+/* ── Venues ────────────────────────────────────────────── */
+.venues { padding: 70px 0; text-align: center; }
+.venues-label { font-size: 12px; color: #475569; font-weight: 600; text-transform: uppercase; letter-spacing: .1em; margin-bottom: 24px; }
+.venues-list { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+.venue-chip {
+  background: rgba(255,255,255,.05); border: 1px solid var(--border);
+  color: #94a3b8; font-size: 13px; font-weight: 600;
+  padding: 7px 16px; border-radius: 8px;
+  transition: background .2s, color .2s, border-color .2s;
+}
+.venue-chip:hover { background: rgba(79,70,229,.15); color: #a5b4fc; border-color: rgba(79,70,229,.3); }
+
+/* ── CTA ───────────────────────────────────────────────── */
+.cta-section {
+  padding: 100px 0; text-align: center;
+  background: linear-gradient(135deg, rgba(79,70,229,.1), rgba(124,58,237,.1));
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.cta-section h2 { font-size: clamp(1.8rem, 3vw, 2.6rem); font-weight: 800; letter-spacing: -.02em; color: white; }
+.cta-section p { margin-top: 14px; font-size: 1rem; color: var(--muted); }
+.cta-section .hero-btns { justify-content: center; margin-top: 36px; }
+
+/* ── Footer ────────────────────────────────────────────── */
+footer {
+  padding: 32px 0; text-align: center;
+  font-size: 13px; color: #475569;
+  border-top: 1px solid var(--border);
+}
+footer a { color: #64748b; text-decoration: none; transition: color .2s; }
+footer a:hover { color: #94a3b8; }
+footer .footer-links { display: flex; justify-content: center; gap: 20px; margin-top: 8px; }
+
+/* ── Chinese overrides ─────────────────────────────────── */
+[lang-mode="zh"] .en { display: none; }
+[lang-mode="en"] .zh { display: none; }
+.zh { display: none; }
+
+/* ── Responsive ────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .hero-inner { grid-template-columns: 1fr; }
+  .hero-mockup { display: none; }
+  .problem-grid, .features-grid { grid-template-columns: 1fr; }
+  .steps { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body lang-mode="en">
+
+<!-- Nav -->
+<nav>
+  <a href="#" class="nav-logo">
+    <span class="nav-logo-icon">📚</span>
+    DeHallucinate Reference Checker
+  </a>
+  <div class="nav-links">
+    <a href="#how-it-works" class="nav-link en">How it works</a>
+    <a href="#how-it-works" class="nav-link zh">工作原理</a>
+    <a href="#features" class="nav-link en">Features</a>
+    <a href="#features" class="nav-link zh">功能</a>
+    <a href="https://github.com/Linwei94/bib-checker" class="nav-link" target="_blank">GitHub</a>
+    <button class="lang-toggle" id="lang-btn">中文</button>
+    <a href="#install" class="nav-cta en">Add to Chrome</a>
+    <a href="#install" class="nav-cta zh">安装扩展</a>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-inner">
+
+      <div class="hero-text">
+        <div class="hero-badge">
+          <span class="badge-dot"></span>
+          <span class="en">Free Chrome Extension</span>
+          <span class="zh">免费 Chrome 扩展</span>
+        </div>
+
+        <h1 class="hero-title">
+          <span class="en">Stop submitting<br><span class="word-gradient">hallucinated</span><br>references</span>
+          <span class="zh">消灭 AI 幻觉引用<br>从<span class="word-gradient">提交前</span>开始</span>
+        </h1>
+
+        <p class="hero-sub en">
+          AI assistants fabricate citations that look real but don't exist.
+          DeHallucinate automatically verifies your entire BibTeX against Google Scholar
+          and shows you exactly what's wrong — before reviewers do.
+        </p>
+        <p class="hero-sub zh">
+          AI 写的参考文献看起来像真的，但根本不存在。
+          DeHallucinate 自动批量比对 Google Scholar，逐字段展示差异，
+          在审稿人发现之前帮你揪出幻觉引用。
+        </p>
+
+        <p class="hero-venues en">
+          Used by researchers submitting to <span>ICML · ICLR · NeurIPS · ACL · CVPR · EMNLP</span>
+        </p>
+        <p class="hero-venues zh">
+          适用于投稿 <span>ICML · ICLR · NeurIPS · ACL · CVPR · EMNLP</span> 的研究者
+        </p>
+
+        <div class="hero-btns">
+          <a href="#install" class="btn-primary" id="install">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v14m-6-6 6 6 6-6"/><rect x="3" y="18" width="18" height="2" rx="1"/></svg>
+            <span class="en">Add to Chrome — Free</span>
+            <span class="zh">免费安装</span>
+          </a>
+          <a href="https://github.com/Linwei94/bib-checker" class="btn-secondary" target="_blank">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.44 9.8 8.2 11.38.6.11.82-.26.82-.58v-2.03c-3.34.73-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.09-.74.08-.73.08-.73 1.2.09 1.84 1.24 1.84 1.24 1.07 1.83 2.8 1.3 3.49 1 .11-.78.42-1.3.76-1.6-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.13-.3-.54-1.52.12-3.18 0 0 1.01-.32 3.3 1.23a11.5 11.5 0 0 1 3-.4c1.02 0 2.04.13 3 .4 2.28-1.55 3.29-1.23 3.29-1.23.66 1.66.25 2.88.12 3.18.77.84 1.24 1.91 1.24 3.22 0 4.61-2.81 5.63-5.48 5.92.43.37.81 1.1.81 2.22v3.29c0 .32.21.7.82.58C20.56 21.8 24 17.3 24 12 24 5.37 18.63 0 12 0z"/></svg>
+            <span class="en">View on GitHub</span>
+            <span class="zh">GitHub</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Mockup -->
+      <div class="hero-mockup">
+        <div class="mockup-glow"></div>
+        <div class="mockup-window">
+          <div class="mockup-bar">
+            <div class="mockup-dots">
+              <span></span><span></span><span></span>
+            </div>
+            <span class="mockup-title">📚 DeHallucinate</span>
+            <span class="mockup-badge">✅ 3 verified</span>
+          </div>
+          <div class="mockup-header">
+            <span class="mockup-header-title">📚 DeHallucinate</span>
+            <span class="mockup-stat">⏳ 8</span>
+            <span class="mockup-stat" style="color:#fed7aa">🔍 5</span>
+            <span class="mockup-stat green">✅ 3</span>
+          </div>
+          <div class="mockup-diff">
+            <table class="mockup-table">
+              <thead>
+                <tr>
+                  <th>Field</th>
+                  <th>Original</th>
+                  <th>Scholar</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="row-same">
+                  <td class="td-field">year</td>
+                  <td>2023</td>
+                  <td>2023</td>
+                </tr>
+                <tr class="row-changed">
+                  <td class="td-field">title</td>
+                  <td class="td-old">Attention is <mark class="hl">All</mark> You Need</td>
+                  <td class="td-new">Attention is <mark class="hl-g">all</mark> You Need</td>
+                </tr>
+                <tr class="row-changed">
+                  <td class="td-field">booktitle</td>
+                  <td class="td-old"><mark class="hl">NIPS</mark> 2023</td>
+                  <td class="td-new"><mark class="hl-g">NeurIPS</mark> 2017</td>
+                </tr>
+                <tr class="row-same">
+                  <td class="td-field">author</td>
+                  <td>Vaswani et al.</td>
+                  <td>Vaswani et al.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="mockup-actions">
+            <button class="mock-btn-keep">👍 Keep</button>
+            <button class="mock-btn-replace">✅ Replace</button>
+            <button class="mock-replace-all">⚡ Replace All (5)</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- Venues / social proof -->
+<section class="venues reveal">
+  <div class="container">
+    <p class="venues-label en">Catch hallucinations before submitting to</p>
+    <p class="venues-label zh">提交前核查——适用于以下顶会</p>
+    <div class="venues-list">
+      <span class="venue-chip">ICML</span>
+      <span class="venue-chip">ICLR</span>
+      <span class="venue-chip">NeurIPS</span>
+      <span class="venue-chip">ACL</span>
+      <span class="venue-chip">EMNLP</span>
+      <span class="venue-chip">CVPR</span>
+      <span class="venue-chip">ICCV</span>
+      <span class="venue-chip">ECCV</span>
+      <span class="venue-chip">AAAI</span>
+      <span class="venue-chip">IJCAI</span>
+      <span class="venue-chip">ACM MM</span>
+      <span class="venue-chip">IEEE TPAMI</span>
+    </div>
+  </div>
+</section>
+
+<!-- Problem -->
+<section class="problem">
+  <div class="container">
+    <div class="reveal">
+      <p class="section-label en">The problem</p>
+      <p class="section-label zh">问题所在</p>
+      <h2 class="section-title en">AI writes citations.<br>They're often fake.</h2>
+      <h2 class="section-title zh">AI 在编造引用。<br>而你很难察觉。</h2>
+      <p class="section-sub en">Large language models confidently fabricate paper titles, author names, venues, and years. These hallucinated references pass spell-check but fail on Google Scholar — and now top venues run automated checks.</p>
+      <p class="section-sub zh">大语言模型会自信地编造论文标题、作者、会议名和年份。这些幻觉引用通过拼写检查，但在 Google Scholar 上根本找不到——而 ICML、ICLR 等顶会已经开始自动核查参考文献。</p>
+    </div>
+
+    <div class="problem-grid">
+      <div class="problem-card reveal reveal-delay-1">
+        <div class="problem-icon">🤖</div>
+        <h3 class="en">LLMs hallucinate references</h3>
+        <h3 class="zh">LLM 会编造参考文献</h3>
+        <p class="en">ChatGPT, Claude, Gemini — all generate plausible-looking but nonexistent citations. The more obscure the topic, the worse it gets.</p>
+        <p class="zh">ChatGPT、Claude、Gemini 都会生成看起来合理但根本不存在的引用。主题越小众，幻觉越严重。</p>
+        <div class="fake-cite">
+          @article{<span class="strike">zhang2023neural</span>,<br>
+          &nbsp; title={<span class="strike">Neural Scaling Laws for...</span>},<br>
+          &nbsp; author={<span class="strike">Zhang, Wei and Liu, Fang</span>},<br>
+          &nbsp; journal={<span class="strike">Nature Machine Intelligence</span>}<br>
+          }
+        </div>
+      </div>
+      <div class="problem-card reveal reveal-delay-2">
+        <div class="problem-icon">🔍</div>
+        <h3 class="en">Top venues now check</h3>
+        <h3 class="zh">顶会已开始自动核查</h3>
+        <p class="en">ICML, ICLR, and NeurIPS have begun flagging papers with unverifiable references. A single hallucinated citation can trigger a desk rejection or integrity review.</p>
+        <p class="zh">ICML、ICLR、NeurIPS 已开始标记含有无法核实引用的论文。一条幻觉引用就可能导致 desk rejection 或学术诚信审查。</p>
+      </div>
+      <div class="problem-card reveal reveal-delay-3">
+        <div class="problem-icon">⏱️</div>
+        <h3 class="en">Manual checking takes hours</h3>
+        <h3 class="zh">手动核查费时费力</h3>
+        <p class="en">Verifying 50+ references one by one on Google Scholar is tedious and error-prone. Most researchers skip it — until it's too late.</p>
+        <p class="zh">逐条在 Google Scholar 核查 50+ 条引用既繁琐又容易出错。大多数研究者直接跳过——直到出事才后悔。</p>
+      </div>
+      <div class="problem-card reveal reveal-delay-4">
+        <div class="problem-icon">📋</div>
+        <h3 class="en">Wrong metadata hurts too</h3>
+        <h3 class="zh">错误元数据同样有害</h3>
+        <p class="en">Even real papers can have outdated venue names, wrong years, or missing DOIs in AI-generated BibTeX. DeHallucinate catches metadata errors too.</p>
+        <p class="zh">即使是真实论文，AI 生成的 BibTeX 也可能有过时的会议名、错误年份或缺失 DOI。DeHallucinate 同样能检测元数据错误。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- How it works -->
+<section class="how" id="how-it-works">
+  <div class="container">
+    <div class="reveal" style="text-align:center">
+      <p class="section-label en">How it works</p>
+      <p class="section-label zh">工作原理</p>
+      <h2 class="section-title en">Three steps to clean references</h2>
+      <h2 class="section-title zh">三步完成全量引用核查</h2>
+    </div>
+
+    <div class="steps">
+      <div class="step reveal reveal-delay-1">
+        <div class="step-icon">📋</div>
+        <div class="step-num">1</div>
+        <h3 class="en">Paste your .bib file</h3>
+        <h3 class="zh">粘贴 .bib 文件</h3>
+        <p class="en">Paste your BibTeX content into the left panel. DeHallucinate parses all entries automatically.</p>
+        <p class="zh">将 BibTeX 内容粘贴到左侧面板，DeHallucinate 自动解析所有条目。</p>
+      </div>
+      <div class="step reveal reveal-delay-2">
+        <div class="step-icon">🤖</div>
+        <div class="step-num">2</div>
+        <h3 class="en">Batch-fetch from Scholar</h3>
+        <h3 class="zh">批量从 Scholar 获取</h3>
+        <p class="en">One click opens Google Scholar for each entry, automatically clicks Cite → BibTeX, and fetches the real metadata — no manual work.</p>
+        <p class="zh">一键自动为每条引用打开 Google Scholar、点击 Cite → BibTeX，获取真实元数据——全程无需手动操作。</p>
+      </div>
+      <div class="step reveal reveal-delay-3">
+        <div class="step-icon">✅</div>
+        <div class="step-num">3</div>
+        <h3 class="en">Review the diff &amp; fix</h3>
+        <h3 class="zh">查看差异并修正</h3>
+        <p class="en">A field-by-field diff with word-level highlights shows exactly what's wrong. Replace individually or hit "Replace All" in one click.</p>
+        <p class="zh">逐字段差异对比（词级高亮）清楚展示哪里有问题。可逐条替换，也可一键"全部替换"。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Features -->
+<section class="features" id="features">
+  <div class="container">
+    <div class="reveal" style="text-align:center">
+      <p class="section-label en">Features</p>
+      <p class="section-label zh">核心功能</p>
+      <h2 class="section-title en">Everything you need,<br>nothing you don't</h2>
+      <h2 class="section-title zh">简单直接，够用就好</h2>
+    </div>
+
+    <div class="features-grid">
+      <div class="feat-card reveal reveal-delay-1">
+        <div class="feat-icon">⚡</div>
+        <h3 class="en">Batch fetch, fully automated</h3>
+        <h3 class="zh">全自动批量获取</h3>
+        <p class="en">Opens Scholar tabs, clicks Cite → BibTeX, closes them — all automatically. Just watch it go.</p>
+        <p class="zh">自动打开 Scholar 标签页、点击 Cite → BibTeX、关闭标签页，全程自动。</p>
+      </div>
+      <div class="feat-card reveal reveal-delay-2">
+        <div class="feat-icon">🔬</div>
+        <h3 class="en">Word-level diff highlights</h3>
+        <h3 class="zh">词级差异高亮</h3>
+        <p class="en">Changed words are highlighted in amber/green. Case differences are ignored so you only see meaningful changes.</p>
+        <p class="zh">改动词语用橙/绿高亮标出，大小写差异自动忽略，只显示真正的差异。</p>
+      </div>
+      <div class="feat-card reveal reveal-delay-3">
+        <div class="feat-icon">🔑</div>
+        <h3 class="en">Keep your citation keys</h3>
+        <h3 class="zh">保留原始 key</h3>
+        <p class="en">Replace metadata while preserving your original BibTeX keys — no broken \cite{} references in your paper.</p>
+        <p class="zh">替换元数据时保留原始 key，论文中的 \cite{} 引用不受影响。</p>
+      </div>
+      <div class="feat-card reveal reveal-delay-1">
+        <div class="feat-icon">🎯</div>
+        <h3 class="en">Replace All in one click</h3>
+        <h3 class="zh">一键全部替换</h3>
+        <p class="en">After reviewing, apply all Scholar-verified BibTeX entries to your file at once. Or replace individually.</p>
+        <p class="zh">审阅完成后，一键将所有 Scholar 核实的条目批量写入文件，也可逐条替换。</p>
+      </div>
+      <div class="feat-card reveal reveal-delay-2">
+        <div class="feat-icon">↩</div>
+        <h3 class="en">Undo anytime</h3>
+        <h3 class="zh">随时撤销</h3>
+        <p class="en">Full undo history. Made a wrong replacement? One keystroke takes you back.</p>
+        <p class="zh">完整撤销历史，替换错了按 Ctrl+Z 立刻恢复。</p>
+      </div>
+      <div class="feat-card reveal reveal-delay-3">
+        <div class="feat-icon">🔒</div>
+        <h3 class="en">100% local — no data sent</h3>
+        <h3 class="zh">完全本地，不上传数据</h3>
+        <p class="en">Your BibTeX never leaves your browser. The only external requests are to Google Scholar — the same ones you'd make manually.</p>
+        <p class="zh">BibTeX 内容始终在本地，唯一的外部请求是访问 Google Scholar——和你手动操作完全一样。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section reveal" id="install">
+  <div class="container">
+    <h2 class="en">Clean up your references<br>before submission</h2>
+    <h2 class="zh">提交前，花五分钟<br>清理你的参考文献</h2>
+    <p class="en">Free. Open source. Takes 30 seconds to install.</p>
+    <p class="zh">免费、开源，30 秒完成安装。</p>
+    <div class="hero-btns">
+      <a href="https://chrome.google.com/webstore" class="btn-primary" target="_blank">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v14m-6-6 6 6 6-6"/><rect x="3" y="18" width="18" height="2" rx="1"/></svg>
+        <span class="en">Add to Chrome — Free</span>
+        <span class="zh">免费安装</span>
+      </a>
+      <a href="https://github.com/Linwei94/bib-checker" class="btn-secondary" target="_blank">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.44 9.8 8.2 11.38.6.11.82-.26.82-.58v-2.03c-3.34.73-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.09-.74.08-.73.08-.73 1.2.09 1.84 1.24 1.84 1.24 1.07 1.83 2.8 1.3 3.49 1 .11-.78.42-1.3.76-1.6-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.13-.3-.54-1.52.12-3.18 0 0 1.01-.32 3.3 1.23a11.5 11.5 0 0 1 3-.4c1.02 0 2.04.13 3 .4 2.28-1.55 3.29-1.23 3.29-1.23.66 1.66.25 2.88.12 3.18.77.84 1.24 1.91 1.24 3.22 0 4.61-2.81 5.63-5.48 5.92.43.37.81 1.1.81 2.22v3.29c0 .32.21.7.82.58C20.56 21.8 24 17.3 24 12 24 5.37 18.63 0 12 0z"/></svg>
+        <span class="en">View Source</span>
+        <span class="zh">查看源码</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <div class="container">
+    <p>
+      <span class="en">Made for researchers who use AI — and want their references to be real.</span>
+      <span class="zh">为使用 AI 辅助科研的研究者而做——让引用真实可靠。</span>
+    </p>
+    <div class="footer-links">
+      <a href="https://github.com/Linwei94/bib-checker" target="_blank">GitHub</a>
+      <a href="https://github.com/Linwei94/bib-checker/blob/main/PRIVACY.md" target="_blank" class="en">Privacy Policy</a>
+      <a href="https://github.com/Linwei94/bib-checker/blob/main/PRIVACY.md" target="_blank" class="zh">隐私政策</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+// ── Scroll reveal ───────────────────────────────────────
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); } });
+}, { threshold: 0.12 });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+// ── Language toggle ─────────────────────────────────────
+const btn = document.getElementById('lang-btn');
+btn.addEventListener('click', () => {
+  const isEn = document.body.getAttribute('lang-mode') === 'en';
+  document.body.setAttribute('lang-mode', isEn ? 'zh' : 'en');
+  btn.textContent = isEn ? 'English' : '中文';
+});
+
+// ── Smooth nav shrink on scroll ─────────────────────────
+window.addEventListener('scroll', () => {
+  document.querySelector('nav').style.background =
+    window.scrollY > 40 ? 'rgba(15,23,42,.95)' : 'rgba(15,23,42,.8)';
+}, { passive: true });
+</script>
+</body>
+</html>
