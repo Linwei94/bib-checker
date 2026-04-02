@@ -3,209 +3,211 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>📚 BibTeX Checker</title>
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='28'>📚</text></svg>">
+<title>BibTeX Checker</title>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: #0f172a;
+  background: #f0f4f8;
   height: 100vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  color: #f1f5f9;
+  color: #1e293b;
   font-size: 13px;
 }
 
 /* ── Header ─────────────────────────────────────────────────── */
 header {
-  background: #1e293b;
-  border-bottom: 1px solid #334155;
-  padding: 8px 14px;
+  background: linear-gradient(135deg, #1e40af, #2563eb);
+  color: white;
+  padding: 0 16px;
+  height: 44px;
   display: flex;
   align-items: center;
   gap: 10px;
   flex-shrink: 0;
-  height: 42px;
+  box-shadow: 0 2px 6px rgba(30,64,175,.4);
 }
-.header-title { font-size: 14px; font-weight: 700; color: #f8fafc; letter-spacing: -.01em; }
+.header-title { font-size: 14px; font-weight: 700; letter-spacing: -.01em; }
 .header-stats { display: flex; gap: 5px; margin-left: 6px; }
 .stat-chip {
   border-radius: 20px; padding: 2px 9px; font-size: 11px; font-weight: 700;
-  background: rgba(255,255,255,.05);
+  background: rgba(255,255,255,.18);
 }
-.stat-chip.pending  { color: #fbbf24; }
-.stat-chip.ok       { color: #34d399; }
-.stat-chip.replaced { color: #60a5fa; }
-.hr { margin-left: auto; display: flex; gap: 6px; }
+.stat-chip.pending  { color: #fde68a; }
+.stat-chip.ok       { color: #6ee7b7; }
+.stat-chip.replaced { color: #bfdbfe; }
+.hdr-r { margin-left: auto; display: flex; gap: 6px; }
 .btn-hdr {
-  background: transparent; color: #64748b; border: 1px solid #334155;
-  border-radius: 5px; padding: 4px 10px; font-size: 11px; font-weight: 600; cursor: pointer;
-  transition: all .15s;
+  background: rgba(255,255,255,.18); color: white;
+  border: 1px solid rgba(255,255,255,.3);
+  border-radius: 5px; padding: 4px 11px;
+  font-size: 11px; font-weight: 600; cursor: pointer; transition: background .15s;
 }
-.btn-hdr:hover { background: #334155; color: #94a3b8; }
-.btn-hdr:disabled { opacity: .3; cursor: not-allowed; }
+.btn-hdr:hover { background: rgba(255,255,255,.3); }
+.btn-hdr:disabled { opacity: .4; cursor: not-allowed; }
 
-/* ── Layout ─────────────────────────────────────────────────── */
+/* ── Main ───────────────────────────────────────────────────── */
 .main { display: flex; flex: 1; overflow: hidden; }
 
-/* ── Left: BibTeX input ──────────────────────────────────────── */
+/* ── Left: BibTeX editor ─────────────────────────────────────── */
 .left {
   width: 38%; display: flex; flex-direction: column;
-  border-right: 1px solid #1e293b;
+  border-right: 2px solid #e2e8f0;
   flex-shrink: 0;
+  background: #1e2d3e;
 }
 .panel-hdr {
   padding: 7px 11px;
   display: flex; align-items: center; justify-content: space-between;
-  border-bottom: 1px solid #1e293b;
+  border-bottom: 1px solid rgba(255,255,255,.07);
+  background: #1a2535;
   flex-shrink: 0;
 }
-.panel-lbl { font-size: 10px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: .07em; }
+.panel-lbl { font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .07em; }
 .btn-parse {
   background: #3b82f6; color: white; border: none; border-radius: 5px;
-  padding: 4px 10px; font-size: 11px; font-weight: 700; cursor: pointer;
+  padding: 4px 11px; font-size: 11px; font-weight: 700; cursor: pointer;
+  transition: background .15s;
 }
 .btn-parse:hover { background: #2563eb; }
 
 #bib-textarea {
   flex: 1; resize: none; outline: none; border: none;
   font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
-  font-size: 10.5px; line-height: 1.65;
-  background: #080e1a; color: #64748b;
+  font-size: 10.5px; line-height: 1.7;
+  background: #1e2d3e; color: #94a3b8;
   padding: 10px 12px;
+  caret-color: #60a5fa;
 }
-#bib-textarea::placeholder { color: #1e293b; }
+#bib-textarea::placeholder { color: #334155; }
+#bib-textarea::selection { background: #1e40af; }
 
 /* ── Right: workflow ─────────────────────────────────────────── */
-.right { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
+.right { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow: hidden; background: #f0f4f8; }
 
-/* entry list */
+/* Entry list */
 .entry-list-wrap {
-  border-bottom: 1px solid #1e293b;
-  max-height: 190px; overflow-y: auto; flex-shrink: 0;
+  background: white;
+  border-bottom: 2px solid #e2e8f0;
+  max-height: 200px; overflow-y: auto; flex-shrink: 0;
 }
 .entry-list-wrap::-webkit-scrollbar { width: 4px; }
-.entry-list-wrap::-webkit-scrollbar-track { background: transparent; }
-.entry-list-wrap::-webkit-scrollbar-thumb { background: #334155; border-radius: 2px; }
+.entry-list-wrap::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 2px; }
 
-.list-empty { padding: 14px; text-align: center; font-size: 12px; color: #334155; font-style: italic; }
+.list-empty { padding: 14px; text-align: center; font-size: 12px; color: #94a3b8; font-style: italic; }
 
 .entry-row {
   display: flex; align-items: center; gap: 8px;
-  padding: 5px 11px; cursor: pointer;
-  border-bottom: 1px solid rgba(255,255,255,.025);
+  padding: 6px 12px; cursor: pointer;
+  border-bottom: 1px solid #f1f5f9;
   transition: background .1s;
 }
-.entry-row:hover { background: #1a2744; }
-.entry-row.active { background: #172554; border-left: 2px solid #3b82f6; padding-left: 9px; }
-.entry-badge { font-size: 12px; flex-shrink: 0; cursor: pointer; transition: transform .1s; }
+.entry-row:last-child { border-bottom: none; }
+.entry-row:hover { background: #f8fafc; }
+.entry-row.active { background: #eff6ff; border-left: 3px solid #3b82f6; padding-left: 9px; }
+.entry-badge { font-size: 13px; flex-shrink: 0; cursor: pointer; transition: transform .1s; user-select: none; }
 .entry-badge:hover { transform: scale(1.3); }
-.entry-key { font-family: monospace; font-size: 10px; color: #374151; width: 120px; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.entry-ttl { font-size: 11.5px; color: #64748b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.entry-row.active .entry-key { color: #60a5fa; }
-.entry-row.active .entry-ttl { color: #94a3b8; }
+.entry-key { font-family: monospace; font-size: 10.5px; color: #94a3b8; width: 120px; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.entry-ttl { font-size: 12px; color: #475569; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+.entry-row.active .entry-key { color: #3b82f6; }
+.entry-row.active .entry-ttl { color: #1e40af; font-weight: 500; }
 
-/* workflow scroll area */
+/* Workflow scroll */
 .workflow-scroll {
   flex: 1; overflow-y: auto; padding: 12px;
   display: flex; flex-direction: column; gap: 10px;
 }
 .workflow-scroll::-webkit-scrollbar { width: 4px; }
-.workflow-scroll::-webkit-scrollbar-track { background: transparent; }
-.workflow-scroll::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 2px; }
+.workflow-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 2px; }
 
-.no-entry-msg { flex: 1; display: flex; align-items: center; justify-content: center; color: #1e293b; font-style: italic; }
+.no-entry-msg {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  color: #cbd5e1; font-style: italic; font-size: 13px;
+}
 
 #active-workflow { display: none; flex-direction: column; gap: 10px; }
 
 /* ── Entry card ──────────────────────────────────────────────── */
 .entry-card {
-  background: #1e293b; border-radius: 8px; padding: 11px 13px;
-  border: 1px solid #334155;
+  background: white; border-radius: 8px; padding: 11px 14px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0,0,0,.06);
 }
-.ec-title { font-size: 13px; font-weight: 600; color: #e2e8f0; line-height: 1.4; margin-bottom: 6px; }
-.ec-meta  { font-size: 11px; color: #475569; line-height: 1.7; }
-.ec-meta code { background: #0f172a; border-radius: 3px; padding: 1px 5px; font-size: 10px; color: #38bdf8; }
+.ec-title { font-size: 13px; font-weight: 600; color: #0f172a; line-height: 1.4; margin-bottom: 5px; }
+.ec-meta  { font-size: 11px; color: #64748b; line-height: 1.7; }
+.ec-meta code { background: #f1f5f9; border-radius: 3px; padding: 1px 5px; font-size: 10.5px; color: #2563eb; }
 
 /* ── Pipeline card ──────────────────────────────────────────── */
 .pipeline-card {
-  background: #1e293b; border-radius: 8px; padding: 13px;
-  border: 1px solid #334155;
+  background: white; border-radius: 8px; padding: 14px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0,0,0,.06);
 }
 .pc-top {
   display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 16px;
+  margin-bottom: 18px;
 }
-.pc-label { font-size: 10px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: .07em; }
-.delay-row { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #475569; }
+.pc-label { font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: .07em; }
+.delay-row { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #94a3b8; }
 .delay-row select {
-  background: #0f172a; color: #64748b; border: 1px solid #334155;
-  border-radius: 4px; padding: 2px 5px; font-size: 11px; cursor: pointer; outline: none;
+  background: #f8fafc; color: #475569; border: 1px solid #e2e8f0;
+  border-radius: 4px; padding: 2px 6px; font-size: 11px; cursor: pointer; outline: none;
 }
 .delay-row select:focus { border-color: #3b82f6; }
 
-/* steps track */
+/* Steps track */
 .steps-track {
   position: relative;
   display: flex; align-items: flex-start;
-  margin-bottom: 16px;
+  margin-bottom: 18px;
 }
-/* connector line behind dots */
 .steps-track::before {
   content: '';
   position: absolute;
-  top: 15px;
-  left: 15px; right: 15px;
+  top: 16px; left: 16px; right: 16px;
   height: 2px;
-  background: #334155;
+  background: #e2e8f0;
   z-index: 0;
 }
+
 .step {
   flex: 1; display: flex; flex-direction: column; align-items: center;
   gap: 6px; position: relative; z-index: 1;
 }
-/* active connector fill */
-.step.done + .step::before,
-.step.done + .step.done::before {
-  content: '';
-  position: absolute;
-  top: 15px; right: 50%; left: -50%;
-  height: 2px; background: #10b981; z-index: -1;
-}
 
 .step-dot {
-  width: 30px; height: 30px; border-radius: 50%;
+  width: 32px; height: 32px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
-  border: 2px solid #334155;
-  background: #0f172a;
-  transition: border-color .3s, background .3s, box-shadow .3s;
-  font-size: 12px; font-weight: 700; color: #334155;
+  border: 2px solid #e2e8f0;
+  background: white;
+  font-size: 12px; font-weight: 700; color: #cbd5e1;
+  transition: all .35s;
 }
 .step.active .step-dot {
-  border-color: #3b82f6; background: #172554; color: #93c5fd;
-  box-shadow: 0 0 0 4px rgba(59,130,246,.15);
+  border-color: #3b82f6; background: #eff6ff; color: #3b82f6;
+  box-shadow: 0 0 0 5px rgba(59,130,246,.12);
   animation: pulse .9s ease-in-out infinite;
 }
 .step.done .step-dot {
-  border-color: #10b981; background: #052e16; color: #10b981;
+  border-color: #10b981; background: #ecfdf5; color: #10b981;
+  box-shadow: none;
 }
 @keyframes pulse {
-  0%,100% { box-shadow: 0 0 0 3px rgba(59,130,246,.2); }
-  50%      { box-shadow: 0 0 0 7px rgba(59,130,246,.05); }
+  0%,100% { box-shadow: 0 0 0 4px rgba(59,130,246,.15); }
+  50%      { box-shadow: 0 0 0 8px rgba(59,130,246,.04); }
 }
-.step-icon { font-size: 13px; line-height: 1; }
+
 .step-lbl {
   font-size: 9.5px; text-align: center; line-height: 1.35;
-  color: #334155; white-space: nowrap;
+  color: #cbd5e1; white-space: nowrap;
   transition: color .3s;
 }
-.step.active .step-lbl { color: #60a5fa; }
-.step.done   .step-lbl { color: #34d399; }
+.step.active .step-lbl { color: #3b82f6; font-weight: 600; }
+.step.done   .step-lbl { color: #10b981; font-weight: 600; }
 
-/* spinner inside active dot */
 @keyframes spin { to { transform: rotate(360deg); } }
 .step-spinner {
   width: 14px; height: 14px;
@@ -213,7 +215,19 @@ header {
   border-radius: 50%; animation: spin .6s linear infinite;
 }
 
-/* start button */
+/* connector fill when done */
+.step-connector {
+  position: absolute;
+  top: 16px; left: 50%; right: -50%;
+  height: 2px; background: #10b981;
+  transform-origin: left;
+  transform: scaleX(0);
+  transition: transform .35s;
+  z-index: 0;
+}
+.step.done .step-connector { transform: scaleX(1); }
+
+/* Start button */
 .btn-start {
   width: 100%; padding: 11px;
   background: linear-gradient(135deg, #1d4ed8, #7c3aed);
@@ -221,67 +235,69 @@ header {
   font-size: 13px; font-weight: 700; cursor: pointer;
   letter-spacing: .02em;
   transition: opacity .15s, transform .1s;
+  box-shadow: 0 2px 8px rgba(29,78,216,.3);
 }
 .btn-start:hover { opacity: .88; }
 .btn-start:active { transform: scale(.98); }
-.btn-start:disabled { opacity: .35; cursor: not-allowed; }
+.btn-start:disabled { opacity: .4; cursor: not-allowed; box-shadow: none; }
 
-/* status line */
+/* Status line */
 .status-line {
   margin-top: 9px; min-height: 16px;
   font-size: 11.5px; color: #3b82f6;
   display: flex; align-items: center; gap: 6px;
 }
-.status-line.ok    { color: #34d399; }
-.status-line.warn  { color: #fbbf24; }
-.status-line.error { color: #f87171; }
-@keyframes spin2 { to { transform: rotate(360deg); } }
+.status-line.ok    { color: #059669; }
+.status-line.warn  { color: #d97706; }
+.status-line.error { color: #dc2626; }
 .spinner {
   display: inline-block; width: 11px; height: 11px;
   border: 2px solid currentColor; border-top-color: transparent;
-  border-radius: 50%; animation: spin2 .6s linear infinite;
-  flex-shrink: 0;
+  border-radius: 50%; animation: spin .6s linear infinite; flex-shrink: 0;
 }
 
 /* ── Actions card ───────────────────────────────────────────── */
 .actions-card {
-  background: #1e293b; border-radius: 8px; padding: 11px 13px;
-  border: 1px solid #334155;
-  display: flex; flex-direction: column; gap: 8px;
+  background: white; border-radius: 8px; padding: 12px 14px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0,0,0,.06);
+  display: flex; flex-direction: column; gap: 9px;
 }
 .keep-key-row {
   display: flex; align-items: center; gap: 6px;
-  font-size: 11px; color: #475569;
+  font-size: 11px; color: #64748b;
 }
 .keep-key-row input[type=checkbox] { accent-color: #3b82f6; cursor: pointer; }
 .keep-key-row label { cursor: pointer; }
-.keep-key-row code { background: #0f172a; border-radius: 3px; padding: 1px 5px; font-size: 10px; color: #38bdf8; }
+.keep-key-row code { background: #f1f5f9; border-radius: 3px; padding: 1px 5px; font-size: 10.5px; color: #2563eb; }
 
 .action-row { display: flex; gap: 7px; }
 .btn-action {
-  flex: 1; padding: 9px 8px; border: none; border-radius: 6px;
+  flex: 1; padding: 9px; border: none; border-radius: 6px;
   font-size: 13px; font-weight: 700; cursor: pointer; transition: opacity .15s;
 }
 .btn-action:hover { opacity: .85; }
-.btn-replace { background: #059669; color: white; }
-.btn-keep    { background: #1e3a5f; color: #60a5fa; border: 1px solid #1e40af; }
+.btn-replace { background: #059669; color: white; box-shadow: 0 1px 4px rgba(5,150,105,.3); }
+.btn-keep    { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
 
 .nav-row { display: flex; align-items: center; gap: 6px; }
 .btn-nav {
-  background: transparent; color: #475569; border: 1px solid #334155;
-  border-radius: 5px; padding: 5px 10px; font-size: 11px; font-weight: 600; cursor: pointer;
+  background: white; color: #64748b;
+  border: 1px solid #e2e8f0; border-radius: 5px;
+  padding: 5px 10px; font-size: 11px; font-weight: 600; cursor: pointer;
+  transition: all .15s;
 }
-.btn-nav:hover { background: #1e293b; color: #94a3b8; }
-.prog-txt { flex: 1; text-align: center; font-size: 11px; color: #334155; font-weight: 700; }
+.btn-nav:hover { background: #f8fafc; color: #475569; border-color: #cbd5e1; }
+.prog-txt { flex: 1; text-align: center; font-size: 11px; color: #94a3b8; font-weight: 600; }
 
 /* ── Toast ──────────────────────────────────────────────────── */
 .toast {
   position: fixed; bottom: 20px; left: 50%;
   transform: translateX(-50%) translateY(8px);
-  background: #334155; color: #f1f5f9;
-  padding: 7px 18px; border-radius: 8px; font-size: 12px;
+  background: #1e293b; color: #f8fafc;
+  padding: 8px 20px; border-radius: 8px; font-size: 13px; font-weight: 500;
   opacity: 0; transition: all .2s; pointer-events: none; z-index: 9999;
-  white-space: nowrap;
+  white-space: nowrap; box-shadow: 0 4px 16px rgba(0,0,0,.25);
 }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 </style>
@@ -291,7 +307,7 @@ header {
 <header>
   <span class="header-title">📚 BibTeX Checker</span>
   <div class="header-stats" id="stats"></div>
-  <div class="hr">
+  <div class="hdr-r">
     <button class="btn-hdr" onclick="downloadBib()">⬇ 下载 .bib</button>
     <button class="btn-hdr" onclick="undoState()" id="undo-btn" disabled>↩ 撤销</button>
   </div>
@@ -299,7 +315,7 @@ header {
 
 <div class="main">
 
-  <!-- ── Left: BibTeX source ── -->
+  <!-- Left: BibTeX source -->
   <div class="left">
     <div class="panel-hdr">
       <span class="panel-lbl">BibTeX 内容</span>
@@ -307,24 +323,25 @@ header {
     </div>
     <textarea id="bib-textarea" spellcheck="false"
       placeholder="粘贴 .bib 文件内容，自动解析…"
-      onpaste="setTimeout(parseAndRender,30)"
+      onpaste="setTimeout(parseAndRender, 30)"
       oninput="saveBib()"></textarea>
   </div>
 
-  <!-- ── Right: workflow ── -->
+  <!-- Right: workflow -->
   <div class="right">
+
     <!-- Entry list -->
     <div class="entry-list-wrap" id="entry-list-wrap">
       <div class="list-empty" id="list-empty">解析条目后开始核查</div>
     </div>
 
-    <!-- Workflow area -->
+    <!-- Workflow -->
     <div class="workflow-scroll">
       <div class="no-entry-msg" id="no-entry-msg">从上方列表选择一条参考文献</div>
 
       <div id="active-workflow">
 
-        <!-- Entry card -->
+        <!-- Entry info -->
         <div class="entry-card" id="entry-card"></div>
 
         <!-- Automation pipeline -->
@@ -344,23 +361,27 @@ header {
           </div>
 
           <div class="steps-track">
-            <div class="step idle" id="step-1">
+            <div class="step" id="step-1">
               <div class="step-dot" id="dot-1">1</div>
               <div class="step-lbl">打开<br>Scholar</div>
+              <div class="step-connector"></div>
             </div>
-            <div class="step idle" id="step-2">
+            <div class="step" id="step-2">
               <div class="step-dot" id="dot-2">2</div>
               <div class="step-lbl">点击<br>Cite</div>
+              <div class="step-connector"></div>
             </div>
-            <div class="step idle" id="step-3">
+            <div class="step" id="step-3">
               <div class="step-dot" id="dot-3">3</div>
               <div class="step-lbl">点击<br>BibTeX</div>
+              <div class="step-connector"></div>
             </div>
-            <div class="step idle" id="step-4">
+            <div class="step" id="step-4">
               <div class="step-dot" id="dot-4">4</div>
               <div class="step-lbl">获取<br>内容</div>
+              <div class="step-connector"></div>
             </div>
-            <div class="step idle" id="step-5">
+            <div class="step" id="step-5">
               <div class="step-dot" id="dot-5">5</div>
               <div class="step-lbl">替换<br>条目</div>
             </div>
@@ -389,27 +410,23 @@ header {
         </div>
 
       </div><!-- /#active-workflow -->
-    </div><!-- /.workflow-scroll -->
-  </div><!-- /.right -->
-</div><!-- /.main -->
+    </div>
+  </div>
+</div>
 
-<!-- Hidden: used internally by replaceEntry() -->
+<!-- Hidden textarea used internally by replaceEntry() -->
 <textarea id="new-bib" style="display:none"></textarea>
 
 <div class="toast" id="toast"></div>
 
 <script>
-// ── State ─────────────────────────────────────────────────────
+// ── State ──────────────────────────────────────────────────────
 let entries    = [];
 let currentIdx = -1;
 let undoHistory = [];
 
-// ── Step management ───────────────────────────────────────────
-// state: 'idle' | 'active' | 'done'
-let stepState = ['', 'idle', 'idle', 'idle', 'idle', 'idle']; // 1-indexed
-
+// ── Step management ────────────────────────────────────────────
 function setStep(n, state) {
-  stepState[n] = state;
   const el  = document.getElementById('step-' + n);
   const dot = document.getElementById('dot-' + n);
   if (!el || !dot) return;
@@ -427,7 +444,7 @@ function resetSteps() {
   for (let i = 1; i <= 5; i++) setStep(i, 'idle');
 }
 
-// ── BibTeX parser ─────────────────────────────────────────────
+// ── BibTeX parser ──────────────────────────────────────────────
 function parseBib(text) {
   const results = [];
   let i = 0;
@@ -487,12 +504,12 @@ function extractFields(raw) {
     const ch = raw[pos];
     let val = '';
     if (ch === '{') {
-      let d = 0, j = pos;
-      for (; j < raw.length; j++) {
-        if (raw[j] === '{') d++;
-        else if (raw[j] === '}') { d--; if (d === 0) { j++; break; } }
+      let d = 0, jj = pos;
+      for (; jj < raw.length; jj++) {
+        if (raw[jj] === '{') d++;
+        else if (raw[jj] === '}') { d--; if (d === 0) { jj++; break; } }
       }
-      val = raw.slice(pos + 1, j - 1);
+      val = raw.slice(pos + 1, jj - 1);
     } else if (ch === '"') {
       const end = raw.indexOf('"', pos + 1);
       val = end === -1 ? '' : raw.slice(pos + 1, end);
@@ -513,7 +530,7 @@ function cleanStr(s) {
           .replace(/\s+/g, ' ').trim();
 }
 
-// ── Parse & render ────────────────────────────────────────────
+// ── Parse & render ─────────────────────────────────────────────
 function reparsePreservingStatus() {
   const sm = {};
   entries.forEach(e => { sm[e.key] = e.status; });
@@ -534,9 +551,8 @@ function parseAndRender() {
 }
 
 function renderEntryList() {
-  const wrap = document.getElementById('entry-list-wrap');
+  const wrap  = document.getElementById('entry-list-wrap');
   const empty = document.getElementById('list-empty');
-  // remove old rows
   wrap.querySelectorAll('.entry-row').forEach(r => r.remove());
   if (entries.length === 0) {
     if (empty) empty.style.display = '';
@@ -546,7 +562,6 @@ function renderEntryList() {
   entries.forEach((e, i) => {
     const div = document.createElement('div');
     div.className = 'entry-row' + (i === currentIdx ? ' active' : '');
-    div.dataset.idx = i;
     div.onclick = () => selectEntry(i);
     const badge = e.status === 'ok' ? '✅' : e.status === 'replaced' ? '🔄' : '⏳';
     div.innerHTML =
@@ -558,7 +573,7 @@ function renderEntryList() {
   updateStats();
 }
 
-// ── Toggle status ─────────────────────────────────────────────
+// ── Toggle status ──────────────────────────────────────────────
 function toggleStatus(idx, event) {
   event.stopPropagation();
   pushHistory();
@@ -569,7 +584,7 @@ function toggleStatus(idx, event) {
   updateStats();
 }
 
-// ── Select entry ──────────────────────────────────────────────
+// ── Select entry ───────────────────────────────────────────────
 function selectEntry(idx) {
   if (idx < 0 || idx >= entries.length) return;
   currentIdx = idx;
@@ -583,8 +598,7 @@ function selectEntry(idx) {
   highlightInBib(e);
 
   document.getElementById('no-entry-msg').style.display = 'none';
-  const aw = document.getElementById('active-workflow');
-  aw.style.display = 'flex';
+  document.getElementById('active-workflow').style.display = 'flex';
 
   const authShort = e.authors.length > 90 ? e.authors.slice(0, 90) + '…' : e.authors;
   document.getElementById('entry-card').innerHTML =
@@ -592,9 +606,9 @@ function selectEntry(idx) {
     `<div class="ec-meta">` +
     (e.authors ? `<b>作者：</b>${authShort}<br>` : '') +
     (e.year    ? `<b>年份：</b>${e.year}` : '') +
-    (e.year && e.venue ? ' &nbsp;·&nbsp; ' : '') +
+    (e.year && e.venue ? ' · ' : '') +
     (e.venue   ? `<b>来源：</b>${e.venue.slice(0, 80)}` : '') +
-    `<br><b>类型：</b>@${e.type} &nbsp;&nbsp; <b>Key：</b><code>${e.key}</code>` +
+    `<br><b>类型：</b>@${e.type} &nbsp; <b>Key：</b><code>${e.key}</code>` +
     `</div>`;
 
   document.getElementById('key-display').textContent = e.key;
@@ -611,19 +625,19 @@ function highlightInBib(entry) {
   const re = new RegExp('@\\w+\\s*\\{\\s*' + escapeRe(entry.key) + '\\s*,', 'i');
   const m = re.exec(text);
   if (!m) return;
-  let depth = 0, i = m.index;
-  for (; i < text.length; i++) {
-    if (text[i] === '{') depth++;
-    else if (text[i] === '}') { depth--; if (depth === 0) { i++; break; } }
+  let depth = 0, ii = m.index;
+  for (; ii < text.length; ii++) {
+    if (text[ii] === '{') depth++;
+    else if (text[ii] === '}') { depth--; if (depth === 0) { ii++; break; } }
   }
   ta.focus();
-  ta.setSelectionRange(m.index, i);
+  ta.setSelectionRange(m.index, ii);
   const lines = text.slice(0, m.index).split('\n').length;
   const lineH = parseFloat(getComputedStyle(ta).lineHeight) || 17;
   ta.scrollTop = Math.max(0, (lines - 3) * lineH);
 }
 
-// ── Undo ──────────────────────────────────────────────────────
+// ── Undo ───────────────────────────────────────────────────────
 function pushHistory() {
   undoHistory.push({
     text: document.getElementById('bib-textarea').value,
@@ -656,22 +670,21 @@ function updateUndoBtn() {
   btn.textContent = undoHistory.length > 0 ? `↩ 撤销 (${undoHistory.length})` : '↩ 撤销';
 }
 
-// ── Delay setting ─────────────────────────────────────────────
+// ── Delay setting ──────────────────────────────────────────────
 let fetchDelay = parseInt(localStorage.getItem('bib-fetch-delay') || '3');
-
 function setFetchDelay(val) {
   fetchDelay = parseInt(val);
   localStorage.setItem('bib-fetch-delay', fetchDelay);
 }
 
-// ── Status line ───────────────────────────────────────────────
+// ── Status line ────────────────────────────────────────────────
 function setFetchStatus(cls, html) {
   const el = document.getElementById('fetch-status');
   el.className = 'status-line' + (cls ? ' ' + cls : '');
   el.innerHTML = html;
 }
 
-// ── Auto-fetch ────────────────────────────────────────────────
+// ── Auto-fetch ─────────────────────────────────────────────────
 function autoFetchBib() {
   if (currentIdx < 0) return;
   resetSteps();
@@ -685,16 +698,7 @@ function autoFetchBib() {
   });
 }
 
-// ── Search URL ────────────────────────────────────────────────
-function getSearchUrl(service) {
-  if (currentIdx < 0) return '';
-  const q = encodeURIComponent(entries[currentIdx].title);
-  return service === 'scholar'
-    ? `https://scholar.google.com/scholar?q=${q}`
-    : `https://www.semanticscholar.org/search?q=${q}&sort=Relevance`;
-}
-
-// ── Actions ───────────────────────────────────────────────────
+// ── Actions ────────────────────────────────────────────────────
 function replaceEntry() {
   if (currentIdx < 0) return;
   let newBib = document.getElementById('new-bib').value.trim();
@@ -709,12 +713,12 @@ function replaceEntry() {
   const m = re.exec(text);
   if (!m) { showToast(`找不到 @${e.key}`); return; }
   pushHistory();
-  let depth = 0, i = m.index;
-  for (; i < text.length; i++) {
-    if (text[i] === '{') depth++;
-    else if (text[i] === '}') { depth--; if (depth === 0) { i++; break; } }
+  let depth = 0, ii = m.index;
+  for (; ii < text.length; ii++) {
+    if (text[ii] === '{') depth++;
+    else if (text[ii] === '}') { depth--; if (depth === 0) { ii++; break; } }
   }
-  ta.value = text.slice(0, m.index) + newBib + text.slice(i);
+  ta.value = text.slice(0, m.index) + newBib + text.slice(ii);
   reparsePreservingStatus();
   const newIdx = entries.findIndex(x => x.key === e.key);
   if (newIdx !== -1) { entries[newIdx].status = 'replaced'; currentIdx = newIdx; }
@@ -778,24 +782,21 @@ function showToast(msg) {
   el.textContent = msg;
   el.classList.add('show');
   clearTimeout(el._timer);
-  el._timer = setTimeout(() => el.classList.remove('show'), 2200);
+  el._timer = setTimeout(() => el.classList.remove('show'), 2500);
 }
 
-// ── Receive messages from extension ──────────────────────────
+// ── Extension messages ─────────────────────────────────────────
 chrome.runtime.onMessage.addListener((msg) => {
   if (msg.type === 'scholar-progress') {
-    // Mark steps 1..(msg.step-1) as done, msg.step as active
     for (let i = 1; i < msg.step; i++) setStep(i, 'done');
     setStep(msg.step, 'active');
     const labels = ['', '打开 Scholar', '点击 Cite', '点击 BibTeX', '获取内容', '替换条目'];
     setFetchStatus('', `<span class="spinner"></span> 正在执行：${labels[msg.step]}…`);
     return;
   }
-
   if (msg.type === 'bib-checker-bib') {
     const bib = msg.bib;
     if (!bib || currentIdx < 0) return;
-    // Steps 1-4 done, step 5 active
     for (let i = 1; i <= 4; i++) setStep(i, 'done');
     setStep(5, 'active');
     setFetchStatus('', '<span class="spinner"></span> BibTeX 已获取，正在替换…');
@@ -814,7 +815,7 @@ chrome.runtime.onMessage.addListener((msg) => {
   }
 });
 
-// ── Keyboard shortcuts ────────────────────────────────────────
+// ── Keyboard shortcuts ─────────────────────────────────────────
 document.addEventListener('keydown', e => {
   if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
   if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); navigate(1); }
@@ -822,7 +823,7 @@ document.addEventListener('keydown', e => {
   if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undoState(); }
 });
 
-// ── Persist bib content ───────────────────────────────────────
+// ── Persist ────────────────────────────────────────────────────
 let _saveTimer;
 function saveBib() {
   clearTimeout(_saveTimer);
@@ -831,7 +832,7 @@ function saveBib() {
   }, 600);
 }
 
-// ── Init ─────────────────────────────────────────────────────
+// ── Init ───────────────────────────────────────────────────────
 document.getElementById('delay-select').value = fetchDelay;
 const _saved = localStorage.getItem('bib-checker-content');
 if (_saved) {
