@@ -26,7 +26,7 @@
     {
       "matches": ["*://scholar.google.com/scholar*"],
       "js": ["scholar-search.js"],
-      "run_at": "document_idle"
+      "run_at": "document_end"
     }
   ],
   "host_permissions": [
