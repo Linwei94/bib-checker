@@ -237,6 +237,25 @@ header h1 { font-size: 1rem; font-weight: 700; }
 }
 #sp-overlay.show { display: block; }
 
+/* ── Diff view ───────────────────────────────────────────────── */
+#diff-view {
+  display: none; border: 1px solid #e2e8f0; border-radius: 6px;
+  padding: 8px 10px; background: #f8fafc; font-size: 11.5px;
+  max-height: 180px; overflow-y: auto;
+}
+.diff-title { font-size: 11px; font-weight: 700; color: #374151; margin-bottom: 6px; text-transform: uppercase; letter-spacing: .04em; }
+.diff-table { width: 100%; border-collapse: collapse; }
+.diff-table td { padding: 2px 5px; vertical-align: top; line-height: 1.45; }
+.diff-field { font-family: monospace; font-weight: 700; color: #374151; width: 64px; flex-shrink: 0; }
+.diff-arrow { color: #9ca3af; width: 14px; text-align: center; }
+.diff-old  { color: #991b1b; max-width: 0; width: 42%; word-break: break-all; }
+.diff-new  { color: #065f46; max-width: 0; width: 42%; word-break: break-all; }
+.diff-changed .diff-old { background: #fff7ed; border-radius: 3px; }
+.diff-changed .diff-new { background: #ecfdf5; border-radius: 3px; }
+.diff-added   .diff-new { background: #d1fae5; border-radius: 3px; }
+.diff-removed .diff-old { background: #fee2e2; border-radius: 3px; }
+.diff-same-msg { color: #059669; font-size: 12px; }
+
 .toast {
   position: fixed; bottom: 20px; right: 20px;
   background: #1e293b; color: white;
@@ -287,8 +306,10 @@ header h1 { font-size: 1rem; font-weight: 700; }
 
         <div>
           <label class="field-label" for="new-bib" data-i18n="new-bib-label">Paste new BibTeX (Scholar → Cite → BibTeX):</label>
-          <textarea id="new-bib" rows="7" data-i18n-placeholder="new-bib-placeholder"></textarea>
+          <textarea id="new-bib" rows="7" data-i18n-placeholder="new-bib-placeholder" oninput="updateDiffView()"></textarea>
         </div>
+
+        <div id="diff-view"></div>
 
         <div class="keep-key-row">
           <input type="checkbox" id="keep-key" checked>
@@ -365,6 +386,8 @@ const I18N = {
     'sp-blocked-scholar': 'Google Scholar blocks embedding.\nClick below to open in a new tab.',
     'sp-blocked-semantic':'Semantic Scholar blocks embedding.\nClick below to open in a new tab.',
     'badge-hint':         'Click to mark as checked / uncheck',
+    'diff-title':         'Differences',
+    'diff-same':          '✅ No differences — content is identical',
     'toast-parsed':       n => `Parsed ${n} entries`,
     'toast-no-content':   'Paste your .bib content first',
     'toast-no-entries':   'No entries found — check your BibTeX format',
@@ -403,6 +426,8 @@ const I18N = {
     'sp-blocked-scholar': 'Google 学术禁止嵌入显示。\n请点击下方在新标签页中打开。',
     'sp-blocked-semantic':'Semantic Scholar 禁止嵌入显示。\n请点击下方在新标签页中打开。',
     'badge-hint':         '点击标记为已核查 / 取消标记',
+    'diff-title':         '差异对比',
+    'diff-same':          '✅ 内容相同，无差异',
     'toast-parsed':       n => `已解析 ${n} 条参考文献`,
     'toast-no-content':   '请先粘贴 .bib 内容',
     'toast-no-entries':   '未找到条目，请检查 BibTeX 格式',
@@ -628,6 +653,7 @@ function selectEntry(idx) {
 
   document.getElementById('key-display').textContent = e.key;
   document.getElementById('new-bib').value = '';
+  document.getElementById('diff-view').style.display = 'none';
   document.getElementById('progress-text').textContent = `${idx + 1} / ${entries.length}`;
   updateStats();
 }
@@ -681,6 +707,74 @@ function updateUndoBtn() {
   if (!btn) return;
   btn.disabled = undoHistory.length === 0;
   btn.textContent = t('btn-undo') + (undoHistory.length > 0 ? ` (${undoHistory.length})` : '');
+}
+
+// ── Diff view ─────────────────────────────────────────────────────
+function updateDiffView() {
+  const diffEl = document.getElementById('diff-view');
+  const newBibText = document.getElementById('new-bib').value.trim();
+  if (!newBibText || currentIdx < 0) { diffEl.style.display = 'none'; return; }
+
+  const oldEntry = entries[currentIdx];
+  const oldFields = extractFields(oldEntry.raw);
+  const oldType = oldEntry.type;
+
+  // Parse new bib (wrap if user pasted only fields without @type{key,...})
+  let text = newBibText;
+  if (!text.startsWith('@')) text = `@misc{__tmp__,\n${text}\n}`;
+  const parsed = parseBib(text);
+  if (!parsed.length) { diffEl.style.display = 'none'; return; }
+  const newE = parsed[0];
+  const newFields = extractFields(newE.raw);
+  const newType = newE.type;
+
+  const rows = [];
+
+  // Type comparison
+  if (oldType !== newType) {
+    rows.push({ field: 'type', old: `@${oldType}`, new: `@${newType}`, status: 'changed' });
+  }
+
+  // Field comparison
+  const allFields = new Set([...Object.keys(oldFields), ...Object.keys(newFields)]);
+  allFields.delete('');
+  // Prioritized display order
+  const priority = ['title','author','year','booktitle','journal','volume','pages','publisher','doi','url','note'];
+  const sorted = [...priority.filter(f => allFields.has(f)), ...[...allFields].filter(f => !priority.includes(f))];
+
+  for (const f of sorted) {
+    if (['key'].includes(f)) continue;
+    const ov = cleanStr(oldFields[f] || '');
+    const nv = cleanStr(newFields[f] || '');
+    if (!ov && !nv) continue;
+    if (ov === nv) continue;
+    rows.push({
+      field: f,
+      old: ov || '',
+      new: nv || '',
+      status: !ov ? 'added' : !nv ? 'removed' : 'changed',
+    });
+  }
+
+  if (!rows.length) {
+    diffEl.innerHTML = `<div class="diff-same-msg">${t('diff-same')}</div>`;
+    diffEl.style.display = 'block';
+    return;
+  }
+
+  const trunc = s => s.length > 90 ? s.slice(0, 90) + '…' : s;
+  let html = `<div class="diff-title">${t('diff-title')}</div><table class="diff-table">`;
+  for (const r of rows) {
+    html += `<tr class="diff-${r.status}">
+      <td class="diff-field">${r.field}</td>
+      <td class="diff-old">${r.status !== 'added'   ? trunc(r.old) : '<span style="color:#9ca3af">—</span>'}</td>
+      <td class="diff-arrow">→</td>
+      <td class="diff-new">${r.status !== 'removed' ? trunc(r.new) : '<span style="color:#9ca3af">—</span>'}</td>
+    </tr>`;
+  }
+  html += '</table>';
+  diffEl.innerHTML = html;
+  diffEl.style.display = 'block';
 }
 
 // ── Search side panel (画中画) ────────────────────────────────────
