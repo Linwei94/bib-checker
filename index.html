@@ -1005,7 +1005,8 @@ function getSearchUrl(service) {
 
 function openDirect(service) {
   if (currentIdx < 0) return;
-  const url = getSearchUrl(service);
+  let url = getSearchUrl(service);
+  if (service === 'scholar') url += '&bib-checker=1';
   window.open(url, '_blank');
 }
 
@@ -1182,6 +1183,16 @@ function showToast(msg) {
   clearTimeout(el._timer);
   el._timer = setTimeout(() => el.classList.remove('show'), 2200);
 }
+
+// ── Receive BibTeX from Scholar extension ─────────────────────────
+window.addEventListener('message', (e) => {
+  if (e.data?.type !== 'bib-checker-bib') return;
+  const bib = e.data.bib;
+  if (!bib || currentIdx < 0) return;
+  document.getElementById('new-bib').value = bib;
+  updateDiffView();
+  setFetchStatus('ok', lang === 'zh' ? '✅ 已从 Google Scholar 获取' : '✅ Received from Google Scholar');
+});
 
 document.addEventListener('keydown', e => {
   if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
