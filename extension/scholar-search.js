@@ -124,6 +124,8 @@ async function run() {
         try { window.opener.postMessage({ type: 'bib-checker-bib', bib: bibText }, '*'); } catch(e) {}
       }
       showResult(bibText);
+      // Close this Scholar window after a short delay
+      setTimeout(() => window.close(), 1500);
     } else {
       setMsg('❌ 获取失败：' + (res?.error || '未知错误'));
     }
