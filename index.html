@@ -872,20 +872,37 @@ function updateSearchPanel(service) {
 function openSideWindow(service) {
   const url = getSearchUrl(service);
   if (!url) return;
-  const w = 700;
-  const h = screen.availHeight;
-  const left = screen.availLeft + Math.max(0, screen.availWidth - w);
-  const top  = screen.availTop;
-  // Reuse same window if it's still open
+
+  const totalW = screen.availWidth;
+  const totalH = screen.availHeight;
+  const screenLeft = screen.availLeft;
+  const screenTop  = screen.availTop;
+
+  const sideW = Math.round(totalW * 0.48);
+  const mainW = totalW - sideW;
+
+  // Try to snap main window to left half
+  try {
+    window.moveTo(screenLeft, screenTop);
+    window.resizeTo(mainW, totalH);
+  } catch(e) { /* restricted in regular tabs — ignore */ }
+
+  // Scholar window on the right half
+  const sideLeft = screenLeft + mainW;
   if (_sideWindow && !_sideWindow.closed) {
     _sideWindow.location.href = url;
+    try {
+      _sideWindow.moveTo(sideLeft, screenTop);
+      _sideWindow.resizeTo(sideW, totalH);
+    } catch(e) {}
     _sideWindow.focus();
   } else {
     _sideWindow = window.open(
       url, 'bib_search_panel',
-      `width=${w},height=${h},left=${left},top=${top},resizable=yes,scrollbars=yes,toolbar=yes`
+      `width=${sideW},height=${totalH},left=${sideLeft},top=${screenTop},resizable=yes,scrollbars=yes,toolbar=yes`
     );
   }
+  closeSearchPanel();
 }
 
 function copySearchUrl() {
