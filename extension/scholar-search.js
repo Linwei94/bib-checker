@@ -1,8 +1,3 @@
-if (!new URLSearchParams(location.search).get('bib-checker')) {
-  // Just show a subtle ready indicator on normal Scholar pages
-  return;
-}
-
 // ── Banner UI ─────────────────────────────────────────────────────
 const style = document.createElement('style');
 style.textContent = `
