@@ -9,117 +9,122 @@ style.textContent = `
     box-shadow: 0 3px 10px rgba(0,0,0,.35);
   }
   #bib-banner-msg { flex: 1; font-weight: 600; }
-  #bib-banner-msg .step { color: #93c5fd; font-size: 11px; margin-right: 6px; }
-  .bib-btn {
-    background: #3b82f6; color: white; border: none; border-radius: 6px;
-    padding: 6px 14px; font-size: 12px; font-weight: 700;
+  .bib-countdown {
+    background: rgba(255,255,255,.15); border-radius: 20px;
+    padding: 3px 10px; font-size: 12px; font-weight: 700; min-width: 32px; text-align: center;
+  }
+  .bib-btn-cancel {
+    background: rgba(255,255,255,.15); color: white; border: 1px solid rgba(255,255,255,.3);
+    border-radius: 6px; padding: 5px 12px; font-size: 12px; font-weight: 700;
     cursor: pointer; white-space: nowrap;
   }
-  .bib-btn:hover { background: #2563eb; }
-  .bib-btn.green { background: #059669; }
-  .bib-btn.green:hover { background: #047857; }
-  .bib-btn.gray  { background: #6b7280; }
-  .bib-btn.gray:hover  { background: #4b5563; }
+  .bib-btn-cancel:hover { background: rgba(255,255,255,.25); }
   .bib-highlight {
     outline: 3px solid #facc15 !important;
     outline-offset: 3px !important;
     box-shadow: 0 0 0 6px rgba(250,204,21,.3) !important;
     border-radius: 4px;
-    transition: outline .2s;
   }
 `;
 document.head.appendChild(style);
 
 const banner = document.createElement('div');
 banner.id = 'bib-banner';
+document.body.style.marginTop = '46px';
 document.body.appendChild(banner);
-// Push page content down
-document.body.style.marginTop = '48px';
 
-function setStep(stepNum, msg, btnLabel, btnClass, onBtn, extra) {
+let cancelled = false;
+
+function setMsg(msg, showCountdown) {
   banner.innerHTML = `
-    <span id="bib-banner-msg"><span class="step">Step ${stepNum}/2</span>${msg}</span>
-    ${extra || ''}
-    <button class="bib-btn ${btnClass || ''}" id="bib-next-btn">${btnLabel} <span style="opacity:.7;font-size:11px">[Enter]</span></button>
-    <button class="bib-btn gray" id="bib-cancel-btn">✕ <span style="opacity:.7;font-size:11px">[Esc]</span></button>
+    <span id="bib-banner-msg">${msg}</span>
+    ${showCountdown ? '<span class="bib-countdown" id="bib-cd">3</span>' : ''}
+    <button class="bib-btn-cancel" id="bib-cancel">✕ 取消</button>
   `;
-  document.getElementById('bib-next-btn').onclick = onBtn;
-  document.getElementById('bib-cancel-btn').onclick = closeBanner;
+  document.getElementById('bib-cancel').onclick = () => {
+    cancelled = true;
+    banner.remove();
+    document.body.style.marginTop = '';
+    document.querySelectorAll('.bib-highlight').forEach(el => el.classList.remove('bib-highlight'));
+  };
 }
 
-function setInfo(msg) {
-  banner.innerHTML = `<span id="bib-banner-msg">${msg}</span>
-    <button class="bib-btn gray" id="bib-cancel-btn">✕ 关闭</button>`;
-  document.getElementById('bib-cancel-btn').onclick = closeBanner;
+function countdown(sec) {
+  return new Promise(resolve => {
+    let n = sec;
+    const el = document.getElementById('bib-cd');
+    if (el) el.textContent = n;
+    const iv = setInterval(() => {
+      if (cancelled) { clearInterval(iv); resolve(); return; }
+      n--;
+      const el = document.getElementById('bib-cd');
+      if (el) el.textContent = n;
+      if (n <= 0) { clearInterval(iv); resolve(); }
+    }, 1000);
+  });
 }
 
-function closeBanner() {
-  banner.remove();
-  document.body.style.marginTop = '';
-  document.querySelectorAll('.bib-highlight').forEach(el => el.classList.remove('bib-highlight'));
+function wait(ms) {
+  return new Promise(r => setTimeout(r, ms));
 }
 
-// ── Step 1: Find Cite button ──────────────────────────────────────
-let citeEl = null, bibEl = null;
-
-function findCite() {
-  citeEl =
-    document.querySelector('.gs_or_cit') ||
-    [...document.querySelectorAll('a')].find(a => /^Cite$/i.test(a.textContent?.trim()));
-  return citeEl;
-}
-
-function step1() {
-  if (!findCite()) {
-    setInfo('⚠️ 未找到 Cite 按钮，请等待页面加载完成后重试');
-    setTimeout(() => { if (findCite()) step1(); }, 1000);
-    return;
+// ── Main flow ─────────────────────────────────────────────────────
+async function run() {
+  // Step 1: find Cite button
+  setMsg('⏳ 等待页面加载…', false);
+  let cite = null;
+  for (let i = 0; i < 30; i++) {
+    cite = document.querySelector('.gs_or_cit') ||
+           [...document.querySelectorAll('a')].find(a => /^Cite$/i.test(a.textContent?.trim()));
+    if (cite) break;
+    await wait(500);
   }
-  citeEl.classList.add('bib-highlight');
-  citeEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  setStep(1, '已找到 <b>Cite</b> 按钮（黄色高亮）', '▶ 点击 Cite', 'green', doStep1);
-}
+  if (cancelled) return;
+  if (!cite) { setMsg('❌ 未找到 Cite 按钮'); return; }
 
-function doStep1() {
-  citeEl.classList.remove('bib-highlight');
-  citeEl.click();
-  setInfo('⏳ 等待引用弹窗出现…');
-  waitForBibtexLink();
-}
+  cite.classList.add('bib-highlight');
+  cite.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  setMsg('Step 1 / 2 &nbsp;—&nbsp; 即将点击 <b>Cite</b> 按钮', true);
+  await countdown(3);
+  if (cancelled) return;
 
-// ── Step 2: Find BibTeX link in popup ────────────────────────────
-function waitForBibtexLink(attempts) {
-  attempts = attempts || 0;
-  bibEl =
-    document.querySelector('a[href*="scisf=4"]') ||
-    document.querySelector('a[href*="scholar.bib"]') ||
-    [...document.querySelectorAll('a')].find(a => /^bibtex$/i.test(a.textContent?.trim()));
+  cite.classList.remove('bib-highlight');
+  cite.click();
 
-  if (!bibEl) {
-    if (attempts < 25) { setTimeout(() => waitForBibtexLink(attempts + 1), 400); return; }
-    setInfo('⚠️ 未找到 BibTeX 链接，请手动在弹窗中点击 BibTeX');
-    return;
+  // Step 2: find BibTeX link in popup
+  setMsg('⏳ 等待弹窗…', false);
+  let bib = null;
+  for (let i = 0; i < 25; i++) {
+    bib = document.querySelector('a[href*="scisf=4"]') ||
+          document.querySelector('a[href*="scholar.bib"]') ||
+          [...document.querySelectorAll('a')].find(a => /^bibtex$/i.test(a.textContent?.trim()));
+    if (bib) break;
+    await wait(400);
   }
+  if (cancelled) return;
+  if (!bib) { setMsg('❌ 未找到 BibTeX 链接'); return; }
 
-  bibEl.classList.add('bib-highlight');
-  setStep(2, '已找到 <b>BibTeX</b> 链接（黄色高亮）', '▶ 点击 BibTeX', 'green', doStep2);
-}
+  bib.classList.add('bib-highlight');
+  setMsg('Step 2 / 2 &nbsp;—&nbsp; 即将点击 <b>BibTeX</b> 链接', true);
+  await countdown(3);
+  if (cancelled) return;
 
-function doStep2() {
-  bibEl.classList.remove('bib-highlight');
-  setInfo('⏳ 正在获取 BibTeX…');
+  bib.classList.remove('bib-highlight');
+  setMsg('⏳ 正在获取 BibTeX…', false);
 
-  chrome.runtime.sendMessage({ type: 'fetch-bib', url: bibEl.href }, (res) => {
+  // Step 3: fetch via background worker
+  chrome.runtime.sendMessage({ type: 'fetch-bib', url: bib.href }, (res) => {
+    if (cancelled) return;
     if (res && res.ok && res.text.startsWith('@')) {
-      showBibResult(res.text);
+      showResult(res.text);
     } else {
-      setInfo('⚠️ 获取失败（' + (res?.error || '未知错误') + '），请手动复制');
+      setMsg('❌ 获取失败：' + (res?.error || '未知错误'));
     }
   });
 }
 
-function showBibResult(bib) {
-  // Remove banner, show full-page overlay instead
+// ── Result overlay ────────────────────────────────────────────────
+function showResult(bib) {
   banner.remove();
   document.body.style.marginTop = '';
 
@@ -128,14 +133,13 @@ function showBibResult(bib) {
     position:fixed; inset:0; z-index:99999; background:rgba(0,0,0,.55);
     display:flex; align-items:center; justify-content:center; padding:24px;
   `;
-
   overlay.innerHTML = `
     <div style="background:white;border-radius:12px;width:100%;max-width:640px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.4)">
       <div style="background:#1e3a8a;color:white;padding:14px 18px;display:flex;align-items:center;gap:10px;flex-shrink:0">
-        <span style="font-size:15px;font-weight:700;flex:1">📋 BibTeX 已就绪</span>
-        <span style="opacity:.7;font-size:12px">[Enter] 复制 &nbsp; [Esc] 关闭</span>
+        <span style="font-size:15px;font-weight:700;flex:1">✅ BibTeX 已就绪</span>
+        <span style="opacity:.65;font-size:12px">[Enter] 复制 &nbsp;·&nbsp; [Esc] 关闭</span>
       </div>
-      <pre id="bib-result-text" style="flex:1;overflow-y:auto;margin:0;padding:16px;font-size:12.5px;line-height:1.7;white-space:pre-wrap;word-break:break-all;color:#1e293b;background:#f8fafc">${bib.replace(/</g,'&lt;')}</pre>
+      <pre style="flex:1;overflow-y:auto;margin:0;padding:16px;font-size:12.5px;line-height:1.7;white-space:pre-wrap;word-break:break-all;color:#1e293b;background:#f8fafc">${bib.replace(/</g,'&lt;')}</pre>
       <div style="padding:12px 16px;background:#f0f9ff;border-top:1px solid #bfdbfe;display:flex;gap:10px;align-items:center;flex-shrink:0">
         <span style="flex:1;font-size:12px;color:#6b7280">复制后切回 BibTeX Checker，按 Ctrl+V 粘贴</span>
         <button id="bib-copy-btn" style="background:#059669;color:white;border:none;border-radius:6px;padding:8px 20px;font-size:13px;font-weight:700;cursor:pointer">复制 BibTeX</button>
@@ -143,44 +147,30 @@ function showBibResult(bib) {
       </div>
     </div>
   `;
-
   document.body.appendChild(overlay);
-
-  const copyBtn = document.getElementById('bib-copy-btn');
-  const closeBtn = document.getElementById('bib-close-btn');
 
   function doCopy() {
     navigator.clipboard.writeText(bib).then(() => {
-      copyBtn.textContent = '✅ 已复制！';
-      setTimeout(() => { copyBtn.textContent = '复制 BibTeX'; }, 2000);
+      const btn = document.getElementById('bib-copy-btn');
+      if (btn) { btn.textContent = '✅ 已复制！'; btn.style.background = '#047857'; }
+      setTimeout(() => {
+        const btn = document.getElementById('bib-copy-btn');
+        if (btn) { btn.textContent = '复制 BibTeX'; btn.style.background = '#059669'; }
+      }, 2000);
     });
-    // Also try postMessage to opener
     if (window.opener) {
       try { window.opener.postMessage({ type: 'bib-checker-bib', bib }, '*'); } catch(e) {}
     }
   }
 
-  copyBtn.onclick = doCopy;
-  closeBtn.onclick = () => overlay.remove();
+  document.getElementById('bib-copy-btn').onclick = doCopy;
+  document.getElementById('bib-close-btn').onclick = () => overlay.remove();
 
-  // Keyboard: Enter = copy, Esc = close
-  document.addEventListener('keydown', function handler(e) {
+  document.addEventListener('keydown', function h(e) {
     if (e.key === 'Enter') { e.preventDefault(); doCopy(); }
-    if (e.key === 'Escape') { overlay.remove(); document.removeEventListener('keydown', handler, true); }
+    if (e.key === 'Escape') { overlay.remove(); document.removeEventListener('keydown', h, true); }
   }, true);
 }
 
-// ── Keyboard shortcut: Enter = next step, Esc = cancel ───────────
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') {
-    const btn = document.getElementById('bib-next-btn');
-    if (btn) { e.preventDefault(); btn.click(); }
-  }
-  if (e.key === 'Escape') {
-    const btn = document.getElementById('bib-cancel-btn');
-    if (btn) btn.click();
-  }
-}, true);
-
 // ── Start ─────────────────────────────────────────────────────────
-setTimeout(step1, 800);
+setTimeout(run, 500);
