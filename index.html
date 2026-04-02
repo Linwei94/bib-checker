@@ -136,6 +136,32 @@ header h1 { font-size: 1rem; font-weight: 700; }
 .btn-undo:disabled { opacity: 0.35; cursor: not-allowed; }
 .btn-undo:disabled:hover { opacity: 0.35; }
 
+.btn-autofetch {
+  width: 100%; padding: 10px; border: none; border-radius: 8px;
+  background: linear-gradient(135deg, #0ea5e9, #6366f1);
+  color: white; font-size: 14px; font-weight: 700;
+  cursor: pointer; transition: opacity 0.15s, transform 0.1s;
+  letter-spacing: .01em;
+}
+.btn-autofetch:hover { opacity: 0.88; }
+.btn-autofetch:active { transform: scale(0.98); }
+.btn-autofetch:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.fetch-status {
+  font-size: 12px; min-height: 18px; padding: 2px 0;
+  display: flex; align-items: center; gap: 6px;
+}
+.fetch-status.loading { color: #6366f1; }
+.fetch-status.ok      { color: #059669; }
+.fetch-status.warn    { color: #d97706; }
+.fetch-status.error   { color: #dc2626; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.spinner {
+  display: inline-block; width: 12px; height: 12px;
+  border: 2px solid currentColor; border-top-color: transparent;
+  border-radius: 50%; animation: spin .7s linear infinite;
+}
+
 .field-label { font-size: 12px; font-weight: 600; color: #374151; display: block; margin-bottom: 4px; }
 
 #new-bib {
@@ -314,6 +340,9 @@ header h1 { font-size: 1rem; font-weight: 700; }
       <div id="active-checker" style="display:none; flex-direction:column; gap:10px; flex:1;">
         <div class="entry-info" id="entry-info"></div>
 
+        <button class="btn btn-autofetch" id="autofetch-btn" onclick="autoFetchBib()" data-i18n="btn-autofetch">✨ 自动获取 BibTeX</button>
+        <div class="fetch-status" id="fetch-status"></div>
+
         <div class="btn-row">
           <button class="btn btn-scholar"  onclick="openDirect('scholar')"  data-i18n="btn-scholar">🔍 Google Scholar</button>
           <button class="btn btn-semantic" onclick="openDirect('semantic')" data-i18n="btn-semantic">📖 Semantic Scholar</button>
@@ -321,7 +350,7 @@ header h1 { font-size: 1rem; font-weight: 700; }
 
         <div>
           <label class="field-label" for="new-bib" data-i18n="new-bib-label">Paste new BibTeX (Scholar → Cite → BibTeX):</label>
-          <textarea id="new-bib" rows="7" data-i18n-placeholder="new-bib-placeholder" oninput="updateDiffView()"></textarea>
+          <textarea id="new-bib" rows="6" data-i18n-placeholder="new-bib-placeholder" oninput="updateDiffView()"></textarea>
         </div>
 
         <div id="diff-view"></div>
@@ -420,6 +449,12 @@ const I18N = {
     'sp-steps-scholar':   ['Search and find your paper', 'Click "Cite" (") below the result', 'Click "BibTeX" → copy the text', 'Paste it in the box on the left'],
     'sp-steps-semantic':  ['Search and find your paper', 'Click "Cite" on the paper page', 'Select "BibTeX" format → copy', 'Paste it in the box on the left'],
     'badge-hint':         'Click to mark as checked / uncheck',
+    'btn-autofetch':      '✨ Auto-fetch BibTeX',
+    'fetch-loading':      'Searching Semantic Scholar…',
+    'fetch-ok':           s => `✅ Found: ${s}`,
+    'fetch-low':          s => `⚠️ Low confidence match: ${s} — check before replacing`,
+    'fetch-notfound':     '❌ Not found in Semantic Scholar or CrossRef',
+    'fetch-error':        '❌ Network error — try again',
     'diff-title':         'Differences',
     'diff-same':          '✅ No differences — content is identical',
     'toast-parsed':       n => `Parsed ${n} entries`,
@@ -466,6 +501,12 @@ const I18N = {
     'sp-steps-scholar':   ['搜索并找到目标论文', '点击结果下方的"引用"(⟨⟩)', '点击"BibTeX"→ 复制全文', '粘贴到左侧输入框'],
     'sp-steps-semantic':  ['搜索并找到目标论文', '在论文页点击"Cite"', '选择 BibTeX 格式 → 复制', '粘贴到左侧输入框'],
     'badge-hint':         '点击标记为已核查 / 取消标记',
+    'btn-autofetch':      '✨ 自动获取 BibTeX',
+    'fetch-loading':      '正在检索 Semantic Scholar…',
+    'fetch-ok':           s => `✅ 已找到：${s}`,
+    'fetch-low':          s => `⚠️ 匹配度较低：${s} — 请确认后替换`,
+    'fetch-notfound':     '❌ Semantic Scholar 和 CrossRef 均未找到',
+    'fetch-error':        '❌ 网络错误，请重试',
     'diff-title':         '差异对比',
     'diff-same':          '✅ 内容相同，无差异',
     'toast-parsed':       n => `已解析 ${n} 条参考文献`,
@@ -695,6 +736,8 @@ function selectEntry(idx) {
   document.getElementById('key-display').textContent = e.key;
   document.getElementById('new-bib').value = '';
   document.getElementById('diff-view').style.display = 'none';
+  document.getElementById('fetch-status').className = 'fetch-status';
+  document.getElementById('fetch-status').innerHTML = '';
   document.getElementById('progress-text').textContent = `${idx + 1} / ${entries.length}`;
   updateStats();
 }
@@ -748,6 +791,136 @@ function updateUndoBtn() {
   if (!btn) return;
   btn.disabled = undoHistory.length === 0;
   btn.textContent = t('btn-undo') + (undoHistory.length > 0 ? ` (${undoHistory.length})` : '');
+}
+
+// ── Auto-fetch BibTeX from Semantic Scholar + CrossRef ────────────
+function titleWords(s) {
+  return new Set(s.toLowerCase().replace(/[^a-z0-9 ]/g,' ').split(/\s+/).filter(Boolean));
+}
+function titleSim(a, b) {
+  const wa = titleWords(a), wb = titleWords(b);
+  if (!wa.size || !wb.size) return 0;
+  let inter = 0; for (const w of wa) if (wb.has(w)) inter++;
+  return inter / Math.max(wa.size, wb.size);
+}
+
+function setFetchStatus(cls, html) {
+  const el = document.getElementById('fetch-status');
+  el.className = 'fetch-status ' + cls;
+  el.innerHTML = html;
+}
+
+async function fetchFromS2(title) {
+  const q = encodeURIComponent(title);
+  const url = `https://api.semanticscholar.org/graph/v1/paper/search?query=${q}&limit=3&fields=title,authors,year,venue,publicationVenue,externalIds,publicationTypes,journal`;
+  const res = await fetch(url);
+  if (!res.ok) return null;
+  const data = await res.json();
+  for (const paper of (data.data || [])) {
+    if (titleSim(title, paper.title) >= 0.65) return paper;
+  }
+  return null;
+}
+
+async function fetchFromCrossRef(title) {
+  const q = encodeURIComponent(title);
+  const url = `https://api.crossref.org/works?query.title=${q}&rows=3&mailto=bib-checker@tool.com`;
+  const res = await fetch(url);
+  if (!res.ok) return null;
+  const data = await res.json();
+  for (const item of (data.message?.items || [])) {
+    const ct = (item.title || [''])[0];
+    if (titleSim(title, ct) >= 0.65) return item;
+  }
+  return null;
+}
+
+function formatFromS2(key, p) {
+  const isJournal = (p.publicationTypes || []).includes('JournalArticle');
+  const venue = p.publicationVenue?.name || p.journal?.name || p.venue || '';
+  const doi   = p.externalIds?.DOI  || '';
+  const arxiv = p.externalIds?.ArXiv || '';
+  const type  = isJournal ? 'article' : 'inproceedings';
+
+  const authorStr = (p.authors || []).map(a => {
+    const parts = a.name.trim().split(/\s+/);
+    if (parts.length === 1) return parts[0];
+    const last = parts.pop();
+    return `${last}, ${parts.join(' ')}`;
+  }).join(' and ');
+
+  let b = `@${type}{${key},\n`;
+  b += `  title     = {${p.title}},\n`;
+  b += `  author    = {${authorStr}},\n`;
+  if (p.year)   b += `  year      = {${p.year}},\n`;
+  if (venue)    b += `  ${isJournal ? 'journal  ' : 'booktitle'} = {${venue}},\n`;
+  if (doi)      b += `  doi       = {${doi}},\n`;
+  else if (arxiv) b += `  url       = {https://arxiv.org/abs/${arxiv}},\n`;
+  b += `}`;
+  return { bib: b, found: p.title, sim: titleSim(key, p.title || '') };
+}
+
+function formatFromCrossRef(key, item) {
+  const title  = (item.title || [''])[0];
+  const type   = item.type || '';
+  const isJournal = type.includes('journal');
+  const bibType = isJournal ? 'article' : 'inproceedings';
+  const venue  = (item['container-title'] || [''])[0];
+  const doi    = item.DOI || '';
+  const year   = String((item['published-print'] || item['published-online'] || item.created || {})?.['date-parts']?.[0]?.[0] || '');
+
+  const authorStr = (item.author || []).map(a => {
+    const family = a.family || '';
+    const given  = a.given  || '';
+    return given ? `${family}, ${given}` : family;
+  }).join(' and ');
+
+  let b = `@${bibType}{${key},\n`;
+  b += `  title     = {${title}},\n`;
+  if (authorStr) b += `  author    = {${authorStr}},\n`;
+  if (year)      b += `  year      = {${year}},\n`;
+  if (venue)     b += `  ${isJournal ? 'journal  ' : 'booktitle'} = {${venue}},\n`;
+  if (doi)       b += `  doi       = {${doi}},\n`;
+  b += `}`;
+  return { bib: b, found: title };
+}
+
+async function autoFetchBib() {
+  if (currentIdx < 0) return;
+  const entry = entries[currentIdx];
+  const btn = document.getElementById('autofetch-btn');
+  btn.disabled = true;
+  setFetchStatus('loading', `<span class="spinner"></span> ${t('fetch-loading')}`);
+
+  try {
+    let result = null;
+
+    const s2 = await fetchFromS2(entry.title);
+    if (s2) {
+      result = formatFromS2(entry.key, s2);
+    } else {
+      const cr = await fetchFromCrossRef(entry.title);
+      if (cr) result = formatFromCrossRef(entry.key, cr);
+    }
+
+    if (!result) {
+      setFetchStatus('error', t('fetch-notfound'));
+    } else {
+      const sim = titleSim(entry.title, result.found);
+      document.getElementById('new-bib').value = result.bib;
+      updateDiffView();
+      const label = result.found.slice(0, 60) + (result.found.length > 60 ? '…' : '');
+      if (sim >= 0.8) {
+        setFetchStatus('ok', t('fetch-ok', label));
+      } else {
+        setFetchStatus('warn', t('fetch-low', result.found.slice(0, 50) + '…'));
+      }
+    }
+  } catch(e) {
+    setFetchStatus('error', t('fetch-error'));
+  } finally {
+    btn.disabled = false;
+  }
 }
 
 // ── Diff view ─────────────────────────────────────────────────────
@@ -1031,18 +1204,10 @@ function isCompleteBib(text) {
 }
 
 document.getElementById('new-bib').addEventListener('paste', () => {
-  setTimeout(() => {
-    const val = document.getElementById('new-bib').value.trim();
-    if (currentIdx >= 0 && isCompleteBib(val)) {
-      updateDiffView();
-      setTimeout(() => {
-        replaceEntry();
-      }, 180);
-    }
-  }, 30);
+  setTimeout(() => updateDiffView(), 30);
 });
 
-// Also: paste anywhere on the page (not in a focused input) → fill new-bib
+// Paste anywhere on the page (not in a focused input) → fill new-bib + show diff
 document.addEventListener('paste', (e) => {
   if (e.target.id === 'new-bib' || e.target.id === 'bib-textarea') return;
   if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
@@ -1051,7 +1216,6 @@ document.addEventListener('paste', (e) => {
   if (isCompleteBib(text)) {
     document.getElementById('new-bib').value = text;
     updateDiffView();
-    setTimeout(replaceEntry, 180);
     e.preventDefault();
   }
 });
