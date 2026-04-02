@@ -1168,7 +1168,8 @@ window.addEventListener('message', (e) => {
     replaceEntry();
     const next = findNextPending(currentIdx);
     if (next !== -1) {
-      setTimeout(() => autoFetchBib(), 800);
+      setFetchStatus('ok', lang === 'zh' ? '✅ 已替换，3 秒后获取下一条…' : '✅ Replaced, fetching next in 3 s…');
+      setTimeout(() => autoFetchBib(), 3000);
     } else {
       setFetchStatus('ok', lang === 'zh' ? '🎉 所有条目已处理完毕' : '🎉 All entries processed');
     }
