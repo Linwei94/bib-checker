@@ -287,7 +287,7 @@ header h1 { font-size: 1rem; font-weight: 700; }
   <h1 data-i18n="title">📚 BibTeX Reference Checker</h1>
   <div class="header-right">
     <div id="stats"></div>
-    <button class="btn-lang" onclick="toggleLang()" id="lang-btn">中文</button>
+    <button class="btn-lang" onclick="toggleLang()" id="lang-btn">English</button>
     <button class="btn-download" onclick="downloadBib()" data-i18n="download">⬇ Download .bib</button>
   </div>
 </header>
@@ -1012,7 +1012,46 @@ document.addEventListener('keydown', e => {
   if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undoState(); }
 });
 
+// ── Auto-replace on paste ─────────────────────────────────────────
+function isCompleteBib(text) {
+  const t = text.trim();
+  if (!t.startsWith('@')) return false;
+  let depth = 0;
+  for (const ch of t) {
+    if (ch === '{') depth++;
+    else if (ch === '}') { depth--; if (depth === 0) return true; }
+  }
+  return false;
+}
+
+document.getElementById('new-bib').addEventListener('paste', () => {
+  setTimeout(() => {
+    const val = document.getElementById('new-bib').value.trim();
+    if (currentIdx >= 0 && isCompleteBib(val)) {
+      updateDiffView();
+      setTimeout(() => {
+        replaceEntry();
+      }, 180);
+    }
+  }, 30);
+});
+
+// Also: paste anywhere on the page (not in a focused input) → fill new-bib
+document.addEventListener('paste', (e) => {
+  if (e.target.id === 'new-bib' || e.target.id === 'bib-textarea') return;
+  if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
+  if (currentIdx < 0) return;
+  const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+  if (isCompleteBib(text)) {
+    document.getElementById('new-bib').value = text;
+    updateDiffView();
+    setTimeout(replaceEntry, 180);
+    e.preventDefault();
+  }
+});
+
 // Init
+lang = 'zh';
 applyLang();
 </script>
 </body>
