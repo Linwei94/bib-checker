@@ -389,10 +389,9 @@ a.install-code:hover { background: rgba(79,70,229,.2); }
 .install-sub { margin-top: 6px; font-size: 12px; color: var(--muted); }
 .install-sub code { font-family: 'JetBrains Mono', monospace; font-size: 11px; background: rgba(255,255,255,.07); padding: 1px 5px; border-radius: 3px; color: #94a3b8; }
 
-/* ── Chinese overrides ─────────────────────────────────── */
-[lang-mode="zh"] .en { display: none; }
-[lang-mode="en"] .zh { display: none; }
-.zh { display: none; }
+/* ── Language switching ────────────────────────────────── */
+[lang-mode="zh"] .en { display: none !important; }
+[lang-mode="en"] .zh { display: none !important; }
 
 /* ── Responsive ────────────────────────────────────────── */
 @media (max-width: 900px) {
