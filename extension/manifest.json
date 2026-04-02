@@ -1,8 +1,11 @@
 {
   "manifest_version": 3,
   "name": "BibTeX Checker – Scholar Helper",
-  "version": "1.1",
+  "version": "1.2",
   "description": "Auto-fetches BibTeX from Google Scholar for the BibTeX Checker tool.",
+  "background": {
+    "service_worker": "background.js"
+  },
   "content_scripts": [
     {
       "matches": ["*://scholar.google.com/scholar*"],

@@ -105,20 +105,17 @@ function waitForBibtexLink(attempts) {
   setStep(2, '已找到 <b>BibTeX</b> 链接（黄色高亮）', '▶ 点击 BibTeX', 'green', doStep2);
 }
 
-async function doStep2() {
+function doStep2() {
   bibEl.classList.remove('bib-highlight');
   setInfo('⏳ 正在获取 BibTeX…');
 
-  try {
-    const res = await fetch(bibEl.href);
-    const text = (await res.text()).trim();
-    if (!text.startsWith('@')) throw new Error('unexpected content');
-    showBibResult(text);
-  } catch(e) {
-    // Fallback: open the link if fetch fails
-    setInfo('⚠️ 无法直接获取，正在打开 BibTeX 页面…');
-    bibEl.click();
-  }
+  chrome.runtime.sendMessage({ type: 'fetch-bib', url: bibEl.href }, (res) => {
+    if (res && res.ok && res.text.startsWith('@')) {
+      showBibResult(res.text);
+    } else {
+      setInfo('⚠️ 获取失败（' + (res?.error || '未知错误') + '），请手动复制');
+    }
+  });
 }
 
 function showBibResult(bib) {
