@@ -324,7 +324,7 @@ header h1 { font-size: 1rem; font-weight: 700; }
       <label data-i18n="bib-source">BibTeX Source</label>
       <button class="btn-parse" onclick="parseAndRender()" data-i18n="parse-btn">Parse Entries →</button>
     </div>
-    <textarea id="bib-textarea" spellcheck="false" data-i18n-placeholder="bib-placeholder" onpaste="setTimeout(parseAndRender,30)"></textarea>
+    <textarea id="bib-textarea" spellcheck="false" data-i18n-placeholder="bib-placeholder" onpaste="setTimeout(parseAndRender,30)" oninput="saveBib()"></textarea>
   </div>
 
   <div class="right-panel">
@@ -1231,9 +1231,23 @@ document.addEventListener('paste', (e) => {
   }
 });
 
+// ── Persist bib content across refreshes ─────────────────────────
+let _saveTimer;
+function saveBib() {
+  clearTimeout(_saveTimer);
+  _saveTimer = setTimeout(() => {
+    localStorage.setItem('bib-checker-content', document.getElementById('bib-textarea').value);
+  }, 600);
+}
+
 // Init
 lang = 'zh';
 applyLang();
+const _saved = localStorage.getItem('bib-checker-content');
+if (_saved) {
+  document.getElementById('bib-textarea').value = _saved;
+  parseAndRender();
+}
 </script>
 </body>
 </html>
