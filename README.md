@@ -12,7 +12,7 @@ A Chrome extension that catches AI-hallucinated references in your BibTeX. LLMs 
 
 > No Chrome Web Store required. Load directly from source.
 
-1. **Clone or download** this repo — `git clone https://github.com/Linwei94/bib-checker` or use the **Code → Download ZIP** button on GitHub
+1. **Clone** this repo — `git clone https://github.com/Linwei94/bib-checker`
 2. Open Chrome and go to `chrome://extensions`
 3. Enable **Developer mode** (toggle in the top-right corner)
 4. Click **Load unpacked** and select the `extension/` folder

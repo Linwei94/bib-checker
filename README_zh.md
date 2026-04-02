@@ -12,7 +12,7 @@
 
 > 无需 Chrome 应用商店，直接从源码加载。
 
-1. **克隆或下载**本仓库 — `git clone https://github.com/Linwei94/bib-checker`，或在 GitHub 页面点击 **Code → Download ZIP**
+1. **克隆**本仓库 — `git clone https://github.com/Linwei94/bib-checker`
 2. 打开 Chrome，进入 `chrome://extensions`
 3. 开启右上角的**开发者模式**
 4. 点击**加载已解压的扩展程序**，选择 `extension/` 文件夹
