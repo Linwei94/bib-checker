@@ -1,73 +1,121 @@
-const fromBibChecker = !!new URLSearchParams(location.search).get('bib-checker');
-
-// ── Show status banner ────────────────────────────────────────────
-const banner = document.createElement('div');
-banner.id = 'bib-checker-banner';
-banner.style.cssText = `
-  position:fixed; top:0; left:0; right:0; z-index:99999;
-  background:#1e40af; color:white; font-family:sans-serif;
-  font-size:13px; font-weight:600; padding:8px 16px;
-  display:flex; align-items:center; gap:10px;
-  box-shadow:0 2px 8px rgba(0,0,0,.3);
-`;
-banner.innerHTML = `<span id="bib-banner-spinner" style="display:inline-block;width:13px;height:13px;border:2px solid white;border-top-color:transparent;border-radius:50%;animation:bib-spin .7s linear infinite"></span>
-<span id="bib-banner-msg">${fromBibChecker ? 'BibTeX Checker: 正在查找引用按钮…' : 'BibTeX Checker 扩展已就绪 ✓ (从工具打开 Scholar 以自动获取)'}</span>`;
-const style = document.createElement('style');
-style.textContent = `@keyframes bib-spin{to{transform:rotate(360deg)}}`;
-document.head.appendChild(style);
-document.body.appendChild(banner);
-
-function setStatus(msg, ok) {
-  document.getElementById('bib-banner-msg').textContent = 'BibTeX Checker: ' + msg;
-  if (ok !== undefined) {
-    document.getElementById('bib-banner-spinner').style.background = ok ? '#4ade80' : '#f87171';
-    document.getElementById('bib-banner-spinner').style.border = 'none';
-    document.getElementById('bib-banner-spinner').style.animation = 'none';
-    document.getElementById('bib-banner-spinner').style.borderRadius = '50%';
-  }
-  if (ok !== undefined) setTimeout(() => banner.remove(), 3000);
+if (!new URLSearchParams(location.search).get('bib-checker')) {
+  // Just show a subtle ready indicator on normal Scholar pages
+  return;
 }
 
-// ── Find and click Cite button ────────────────────────────────────
-let attempts = 0;
+// ── Banner UI ─────────────────────────────────────────────────────
+const style = document.createElement('style');
+style.textContent = `
+  #bib-banner {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 99999;
+    background: #1e3a8a; color: white;
+    font-family: -apple-system, sans-serif; font-size: 13px;
+    padding: 10px 16px; display: flex; align-items: center; gap: 12px;
+    box-shadow: 0 3px 10px rgba(0,0,0,.35);
+  }
+  #bib-banner-msg { flex: 1; font-weight: 600; }
+  #bib-banner-msg .step { color: #93c5fd; font-size: 11px; margin-right: 6px; }
+  .bib-btn {
+    background: #3b82f6; color: white; border: none; border-radius: 6px;
+    padding: 6px 14px; font-size: 12px; font-weight: 700;
+    cursor: pointer; white-space: nowrap;
+  }
+  .bib-btn:hover { background: #2563eb; }
+  .bib-btn.green { background: #059669; }
+  .bib-btn.green:hover { background: #047857; }
+  .bib-btn.gray  { background: #6b7280; }
+  .bib-btn.gray:hover  { background: #4b5563; }
+  .bib-highlight {
+    outline: 3px solid #facc15 !important;
+    outline-offset: 3px !important;
+    box-shadow: 0 0 0 6px rgba(250,204,21,.3) !important;
+    border-radius: 4px;
+    transition: outline .2s;
+  }
+`;
+document.head.appendChild(style);
 
-function clickCite() {
-  // Multiple selector fallbacks for Scholar's cite button
-  const cite =
+const banner = document.createElement('div');
+banner.id = 'bib-banner';
+document.body.appendChild(banner);
+// Push page content down
+document.body.style.marginTop = '48px';
+
+function setStep(stepNum, msg, btnLabel, btnClass, onBtn, extra) {
+  banner.innerHTML = `
+    <span id="bib-banner-msg"><span class="step">Step ${stepNum}/2</span>${msg}</span>
+    ${extra || ''}
+    <button class="bib-btn ${btnClass || ''}" id="bib-next-btn">${btnLabel}</button>
+    <button class="bib-btn gray" id="bib-cancel-btn">✕ 取消</button>
+  `;
+  document.getElementById('bib-next-btn').onclick = onBtn;
+  document.getElementById('bib-cancel-btn').onclick = closeBanner;
+}
+
+function setInfo(msg) {
+  banner.innerHTML = `<span id="bib-banner-msg">${msg}</span>
+    <button class="bib-btn gray" id="bib-cancel-btn">✕ 关闭</button>`;
+  document.getElementById('bib-cancel-btn').onclick = closeBanner;
+}
+
+function closeBanner() {
+  banner.remove();
+  document.body.style.marginTop = '';
+  document.querySelectorAll('.bib-highlight').forEach(el => el.classList.remove('bib-highlight'));
+}
+
+// ── Step 1: Find Cite button ──────────────────────────────────────
+let citeEl = null, bibEl = null;
+
+function findCite() {
+  citeEl =
     document.querySelector('.gs_or_cit') ||
-    document.querySelector('[data-clk-atid] a[aria-label*="ite"]') ||
-    document.querySelector('a[href*="cites"]') ||
     [...document.querySelectorAll('a')].find(a => /^Cite$/i.test(a.textContent?.trim()));
+  return citeEl;
+}
 
-  if (!cite) {
-    if (++attempts < 30) { setTimeout(clickCite, 500); return; }
-    setStatus('未找到引用按钮，请手动点击 Cite', false);
+function step1() {
+  if (!findCite()) {
+    setInfo('⚠️ 未找到 Cite 按钮，请等待页面加载完成后重试');
+    setTimeout(() => { if (findCite()) step1(); }, 1000);
+    return;
+  }
+  citeEl.classList.add('bib-highlight');
+  citeEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  setStep(1, '已找到 <b>Cite</b> 按钮（黄色高亮）', '▶ 点击 Cite', 'green', doStep1);
+}
+
+function doStep1() {
+  citeEl.classList.remove('bib-highlight');
+  citeEl.click();
+  setInfo('⏳ 等待引用弹窗出现…');
+  waitForBibtexLink();
+}
+
+// ── Step 2: Find BibTeX link in popup ────────────────────────────
+function waitForBibtexLink(attempts) {
+  attempts = attempts || 0;
+  bibEl =
+    document.querySelector('a[href*="scisf=4"]') ||
+    document.querySelector('a[href*="scholar.bib"]') ||
+    [...document.querySelectorAll('a')].find(a => /^bibtex$/i.test(a.textContent?.trim()));
+
+  if (!bibEl) {
+    if (attempts < 25) { setTimeout(() => waitForBibtexLink(attempts + 1), 400); return; }
+    setInfo('⚠️ 未找到 BibTeX 链接，请手动在弹窗中点击 BibTeX');
     return;
   }
 
-  setStatus('找到引用按钮，正在点击…');
-  cite.click();
-
-  let popupAttempts = 0;
-  function clickBibtex() {
-    // BibTeX link: href contains scisf=4 or output=citation, or text = BibTeX
-    const bib =
-      document.querySelector('a[href*="scisf=4"]') ||
-      document.querySelector('a[href*="scholar.bib"]') ||
-      [...document.querySelectorAll('a')].find(a => /^bibtex$/i.test(a.textContent?.trim()));
-
-    if (!bib) {
-      if (++popupAttempts < 20) { setTimeout(clickBibtex, 400); return; }
-      setStatus('未找到 BibTeX 链接，请手动点击', false);
-      return;
-    }
-
-    setStatus('正在打开 BibTeX…');
-    bib.click();
-    setTimeout(() => banner.remove(), 1500);
-  }
-  setTimeout(clickBibtex, 800);
+  bibEl.classList.add('bib-highlight');
+  setStep(2, '已找到 <b>BibTeX</b> 链接（黄色高亮）', '▶ 点击 BibTeX', 'green', doStep2);
 }
 
-if (fromBibChecker) setTimeout(clickCite, 1200);
-else setTimeout(() => banner.remove(), 3000);
+function doStep2() {
+  bibEl.classList.remove('bib-highlight');
+  closeBanner();
+  bibEl.click();
+  // BibTeX page will open — scholar-bib.js handles it
+}
+
+// ── Start ─────────────────────────────────────────────────────────
+setTimeout(step1, 800);
