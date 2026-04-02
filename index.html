@@ -1159,8 +1159,18 @@ window.addEventListener('message', (e) => {
   if (!bib || currentIdx < 0) return;
   document.getElementById('new-bib').value = bib;
   updateDiffView();
-  setFetchStatus('ok', lang === 'zh' ? '✅ 已从 Google Scholar 获取' : '✅ Received from Google Scholar');
+  setFetchStatus('ok', lang === 'zh' ? '✅ 已从 Google Scholar 获取，正在替换…' : '✅ Received, replacing…');
   closeScholarWindow();
+  // Auto-replace, then auto-fetch next entry
+  setTimeout(() => {
+    replaceEntry();
+    const next = findNextPending(currentIdx);
+    if (next !== -1) {
+      setTimeout(() => autoFetchBib(), 800);
+    } else {
+      setFetchStatus('ok', lang === 'zh' ? '🎉 所有条目已处理完毕' : '🎉 All entries processed');
+    }
+  }, 400);
 });
 
 function closeScholarWindow() {
