@@ -1,0 +1,1267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BibTeX Reference Checker</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%231e40af'/><text x='14' y='23' font-family='Georgia,serif' font-size='22' font-weight='700' fill='white' text-anchor='middle'>B</text><circle cx='23' cy='9' r='8' fill='%23059669'/><polyline points='19.5,9 22,12 27,6.5' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/></svg>">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #f0f2f5;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  color: #1f2937;
+}
+
+header {
+  background: linear-gradient(135deg, #1e40af, #3b82f6);
+  color: white;
+  padding: 10px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+header h1 { font-size: 1rem; font-weight: 700; }
+.header-right { display: flex; align-items: center; gap: 10px; }
+#stats { display: flex; gap: 6px; font-size: 12px; }
+#stats span { background: rgba(255,255,255,0.18); border-radius: 20px; padding: 2px 10px; font-weight: 500; }
+
+.btn-lang {
+  background: rgba(255,255,255,0.2);
+  color: white;
+  border: 1px solid rgba(255,255,255,0.4);
+  border-radius: 6px;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-lang:hover { background: rgba(255,255,255,0.3); }
+
+.btn-download {
+  background: white;
+  color: #1e40af;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn-download:hover { background: #eff6ff; }
+
+.main { display: flex; flex: 1; gap: 10px; padding: 10px; overflow: hidden; }
+
+.left-panel { display: flex; flex-direction: column; width: 42%; gap: 7px; flex-shrink: 0; }
+.panel-toolbar { display: flex; align-items: center; justify-content: space-between; }
+.panel-toolbar label { font-size: 13px; font-weight: 600; color: #374151; }
+.btn-parse {
+  background: #1e40af; color: white; border: none; border-radius: 5px;
+  padding: 5px 13px; font-size: 12px; font-weight: 600; cursor: pointer;
+}
+.btn-parse:hover { background: #1d4ed8; }
+
+#bib-textarea {
+  flex: 1;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 11.5px; line-height: 1.55;
+  border: 1px solid #d1d5db; border-radius: 7px;
+  padding: 10px; resize: none; outline: none;
+  background: #fff; color: #111827;
+}
+#bib-textarea:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.12); }
+
+.right-panel { flex: 1; display: flex; flex-direction: column; gap: 8px; overflow: hidden; min-width: 0; }
+
+.entry-list-wrap {
+  background: white; border: 1px solid #d1d5db; border-radius: 7px;
+  overflow-y: auto; max-height: 195px; flex-shrink: 0;
+}
+.entry-placeholder { color: #9ca3af; font-size: 13px; text-align: center; padding: 18px; font-style: italic; }
+.entry-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 12px; border-bottom: 1px solid #f3f4f6;
+  cursor: pointer; transition: background 0.1s;
+}
+.entry-item:last-child { border-bottom: none; }
+.entry-item:hover { background: #f9fafb; }
+.entry-item.active { background: #eff6ff; border-left: 3px solid #3b82f6; padding-left: 9px; }
+.entry-badge {
+  font-size: 14px; flex-shrink: 0; width: 20px; text-align: center;
+  cursor: pointer; border-radius: 3px; padding: 1px;
+  transition: background 0.1s;
+}
+.entry-badge:hover { background: rgba(0,0,0,0.08); }
+.entry-badge[title] { cursor: pointer; }
+.entry-key { font-family: monospace; font-size: 11px; color: #6b7280; flex-shrink: 0; width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.entry-title-small { font-size: 12px; color: #374151; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.checker-panel {
+  background: white; border: 1px solid #d1d5db; border-radius: 7px;
+  padding: 14px; flex: 1; display: flex; flex-direction: column;
+  gap: 10px; overflow-y: auto;
+}
+.checker-placeholder { color: #9ca3af; font-size: 13px; text-align: center; padding: 30px 0; font-style: italic; }
+
+.entry-info {
+  background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px;
+  padding: 10px 12px; font-size: 12.5px; line-height: 1.65;
+}
+.entry-info .info-title { font-weight: 700; color: #111827; margin-bottom: 5px; font-size: 13px; }
+.entry-info .info-row { color: #4b5563; }
+.entry-info code { background: #e5e7eb; border-radius: 3px; padding: 1px 5px; font-size: 11px; color: #374151; }
+
+.btn-row { display: flex; gap: 8px; }
+.btn {
+  flex: 1; padding: 8px 10px; border: none; border-radius: 6px;
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+}
+.btn:hover { opacity: 0.88; }
+.btn:active { transform: scale(0.97); }
+.btn-scholar  { background: #4285f4; color: white; }
+.btn-semantic { background: #7c3aed; color: white; }
+.btn-replace  { background: #059669; color: white; }
+.btn-keep     { background: #e5e7eb; color: #374151; }
+.btn-nav      { background: #f3f4f6; color: #374151; font-size: 12px; padding: 6px 10px; flex: 0 0 auto; }
+.btn-undo     { background: #fef3c7; color: #92400e; font-size: 12px; padding: 6px 10px; flex: 0 0 auto; }
+.btn-undo:disabled { opacity: 0.35; cursor: not-allowed; }
+.btn-undo:disabled:hover { opacity: 0.35; }
+
+.btn-autofetch {
+  width: 100%; padding: 10px; border: none; border-radius: 8px;
+  background: linear-gradient(135deg, #0ea5e9, #6366f1);
+  color: white; font-size: 14px; font-weight: 700;
+  cursor: pointer; transition: opacity 0.15s, transform 0.1s;
+  letter-spacing: .01em;
+}
+.btn-autofetch:hover { opacity: 0.88; }
+.btn-autofetch:active { transform: scale(0.98); }
+.btn-autofetch:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.fetch-status {
+  font-size: 12px; min-height: 18px; padding: 2px 0;
+  display: flex; align-items: center; gap: 6px;
+}
+.fetch-status.loading { color: #6366f1; }
+.fetch-status.ok      { color: #059669; }
+.fetch-status.warn    { color: #d97706; }
+.fetch-status.error   { color: #dc2626; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.spinner {
+  display: inline-block; width: 12px; height: 12px;
+  border: 2px solid currentColor; border-top-color: transparent;
+  border-radius: 50%; animation: spin .7s linear infinite;
+}
+
+.field-label { font-size: 12px; font-weight: 600; color: #374151; display: block; margin-bottom: 4px; }
+
+#new-bib {
+  width: 100%; font-family: 'Courier New', Courier, monospace;
+  font-size: 11.5px; line-height: 1.5;
+  border: 1px solid #d1d5db; border-radius: 6px;
+  padding: 8px 10px; resize: vertical; outline: none;
+  min-height: 130px; background: #fafafa;
+}
+#new-bib:focus { border-color: #3b82f6; background: white; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+
+.keep-key-row { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #6b7280; }
+.keep-key-row code { background: #e5e7eb; border-radius: 3px; padding: 1px 5px; font-size: 11px; color: #374151; }
+
+.nav-row { display: flex; align-items: center; gap: 6px; }
+#progress-text { flex: 1; text-align: center; font-size: 12px; color: #9ca3af; font-weight: 500; }
+
+/* ── Search side panel (画中画 launcher) ─────────────────────── */
+#search-panel {
+  position: fixed;
+  top: 0; right: -380px;
+  width: 360px; height: 100vh;
+  background: white;
+  border-left: 2px solid #3b82f6;
+  box-shadow: -6px 0 24px rgba(0,0,0,0.18);
+  display: flex; flex-direction: column;
+  z-index: 1000;
+  transition: right 0.3s cubic-bezier(.4,0,.2,1);
+}
+#search-panel.open { right: 0; }
+
+.sp-header {
+  background: linear-gradient(135deg, #1e40af, #3b82f6);
+  color: white; padding: 9px 13px;
+  display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+}
+.sp-header-title { font-size: 13px; font-weight: 700; flex: 1; }
+.sp-close {
+  background: rgba(255,255,255,0.2); border: none; color: white;
+  border-radius: 5px; padding: 4px 10px; font-size: 13px;
+  cursor: pointer; font-weight: 700; flex-shrink: 0;
+}
+.sp-close:hover { background: rgba(255,255,255,0.35); }
+
+.sp-tabs {
+  display: flex; border-bottom: 1px solid #e2e8f0;
+  flex-shrink: 0; background: #f8fafc;
+}
+.sp-tab {
+  flex: 1; padding: 7px 8px; font-size: 12px; font-weight: 600;
+  border: none; background: none; cursor: pointer; color: #6b7280;
+  border-bottom: 2px solid transparent; transition: all 0.15s;
+}
+.sp-tab.active { color: #1e40af; border-bottom-color: #3b82f6; background: white; }
+.sp-tab:hover:not(.active) { background: #f0f0f0; }
+
+.sp-body {
+  flex: 1; padding: 16px 14px; display: flex; flex-direction: column;
+  gap: 14px; overflow-y: auto;
+}
+
+.sp-paper-box {
+  background: #f0f7ff; border: 1px solid #bfdbfe; border-radius: 7px;
+  padding: 10px 12px;
+}
+.sp-paper-label { font-size: 10px; font-weight: 700; color: #3b82f6; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 4px; }
+.sp-paper-title { font-size: 12.5px; font-weight: 600; color: #1e3a5f; line-height: 1.5; }
+
+.sp-side-btn {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; padding: 11px 14px; border: none; border-radius: 8px;
+  font-size: 14px; font-weight: 700; cursor: pointer; text-decoration: none;
+  transition: opacity 0.15s, transform 0.1s;
+}
+.sp-side-btn:hover { opacity: 0.88; }
+.sp-side-btn:active { transform: scale(0.98); }
+.sp-side-scholar  { background: #4285f4; color: white; }
+.sp-side-semantic { background: #7c3aed; color: white; }
+
+.sp-side-hint {
+  font-size: 11px; color: #9ca3af; text-align: center; margin-top: -8px; line-height: 1.5;
+}
+
+.sp-divider { border: none; border-top: 1px solid #f0f0f0; margin: 0; }
+
+.sp-steps-title { font-size: 11px; font-weight: 700; color: #374151; text-transform: uppercase; letter-spacing: .05em; }
+.sp-steps { display: flex; flex-direction: column; gap: 6px; }
+.sp-step {
+  display: flex; align-items: flex-start; gap: 8px; font-size: 12px; color: #4b5563; line-height: 1.5;
+}
+.sp-step-num {
+  background: #3b82f6; color: white; border-radius: 50%;
+  width: 18px; height: 18px; font-size: 10px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px;
+}
+
+.sp-url-row { display: flex; gap: 6px; align-items: center; }
+.sp-url-display {
+  flex: 1; font-family: monospace; font-size: 10.5px; color: #6b7280;
+  background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 5px;
+  padding: 4px 7px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.sp-copy-btn {
+  background: #f3f4f6; color: #374151; border: 1px solid #d1d5db;
+  border-radius: 5px; padding: 4px 9px; font-size: 11px; font-weight: 600;
+  cursor: pointer; white-space: nowrap; flex-shrink: 0;
+}
+.sp-copy-btn:hover { background: #e5e7eb; }
+
+/* ── Overlay dim when panel open ──────────────────────────────── */
+#sp-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.15);
+  z-index: 999; display: none;
+}
+#sp-overlay.show { display: block; }
+
+/* ── Diff view ───────────────────────────────────────────────── */
+#diff-view {
+  display: none; border: 1px solid #e2e8f0; border-radius: 6px;
+  padding: 8px 10px; background: #f8fafc; font-size: 11.5px;
+  max-height: 180px; overflow-y: auto;
+}
+.diff-title { font-size: 11px; font-weight: 700; color: #374151; margin-bottom: 6px; text-transform: uppercase; letter-spacing: .04em; }
+.diff-table { width: 100%; border-collapse: collapse; }
+.diff-table td { padding: 2px 5px; vertical-align: top; line-height: 1.45; }
+.diff-field { font-family: monospace; font-weight: 700; color: #374151; width: 64px; flex-shrink: 0; }
+.diff-arrow { color: #9ca3af; width: 14px; text-align: center; }
+.diff-old  { color: #991b1b; max-width: 0; width: 42%; word-break: break-all; }
+.diff-new  { color: #065f46; max-width: 0; width: 42%; word-break: break-all; }
+.diff-changed .diff-old { background: #fff7ed; border-radius: 3px; }
+.diff-changed .diff-new { background: #ecfdf5; border-radius: 3px; }
+.diff-added   .diff-new { background: #d1fae5; border-radius: 3px; }
+.diff-removed .diff-old { background: #fee2e2; border-radius: 3px; }
+.diff-same-msg { color: #059669; font-size: 12px; }
+
+.toast {
+  position: fixed; bottom: 20px; right: 20px;
+  background: #1e293b; color: white;
+  padding: 9px 16px; border-radius: 8px; font-size: 13px;
+  opacity: 0; transform: translateY(8px);
+  transition: all 0.2s; pointer-events: none; z-index: 1001;
+}
+.toast.show { opacity: 1; transform: translateY(0); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1 data-i18n="title">📚 BibTeX Reference Checker</h1>
+  <div class="header-right">
+    <div id="stats"></div>
+    <button class="btn-lang" onclick="toggleLang()" id="lang-btn">English</button>
+    <button class="btn-download" onclick="downloadBib()" data-i18n="download">⬇ Download .bib</button>
+  </div>
+</header>
+
+<div class="main">
+  <div class="left-panel">
+    <div class="panel-toolbar">
+      <label data-i18n="bib-source">BibTeX Source</label>
+      <button class="btn-parse" onclick="parseAndRender()" data-i18n="parse-btn">Parse Entries →</button>
+    </div>
+    <textarea id="bib-textarea" spellcheck="false" data-i18n-placeholder="bib-placeholder" onpaste="setTimeout(parseAndRender,30)" oninput="saveBib()"></textarea>
+  </div>
+
+  <div class="right-panel">
+    <div class="entry-list-wrap" id="entry-list-wrap">
+      <div class="entry-placeholder" data-i18n="list-placeholder">Parse entries to begin</div>
+    </div>
+
+    <div class="checker-panel" id="checker-panel">
+      <div class="checker-placeholder" id="checker-placeholder" data-i18n="checker-placeholder">
+        Select an entry from the list above to check it
+      </div>
+
+      <div id="active-checker" style="display:none; flex-direction:column; gap:10px; flex:1;">
+        <div class="entry-info" id="entry-info"></div>
+
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <button class="btn btn-autofetch" id="autofetch-btn" onclick="autoFetchBib()" data-i18n="btn-autofetch" style="flex:1;min-width:180px;">✨ 自动获取 BibTeX</button>
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:#64748b;white-space:nowrap;">
+            <span data-i18n="delay-label">间隔</span>
+            <select id="delay-select" onchange="setFetchDelay(this.value)" style="padding:4px 8px;border:1px solid #cbd5e1;border-radius:6px;font-size:13px;background:white;cursor:pointer;">
+              <option value="1">1 s</option>
+              <option value="2">2 s</option>
+              <option value="3" selected>3 s</option>
+              <option value="5">5 s</option>
+              <option value="10">10 s</option>
+            </select>
+          </label>
+        </div>
+        <div class="fetch-status" id="fetch-status"></div>
+
+        <div class="btn-row">
+          <button class="btn btn-scholar"  onclick="openDirect('scholar')"  data-i18n="btn-scholar">🔍 Google Scholar</button>
+          <button class="btn btn-semantic" onclick="openDirect('semantic')" data-i18n="btn-semantic">📖 Semantic Scholar</button>
+        </div>
+
+        <div>
+          <label class="field-label" for="new-bib" data-i18n="new-bib-label">Paste new BibTeX (Scholar → Cite → BibTeX):</label>
+          <textarea id="new-bib" rows="6" data-i18n-placeholder="new-bib-placeholder" oninput="updateDiffView()"></textarea>
+        </div>
+
+        <div id="diff-view"></div>
+
+        <div class="keep-key-row">
+          <input type="checkbox" id="keep-key" checked>
+          <label for="keep-key" data-i18n="keep-key-label">Keep original key:</label>
+          <code id="key-display"></code>
+        </div>
+
+        <div class="btn-row">
+          <button class="btn btn-replace" onclick="replaceEntry()" data-i18n="btn-replace">✅ Replace Entry</button>
+          <button class="btn btn-keep"    onclick="keepOriginal()" data-i18n="btn-keep">👍 Keep Original</button>
+        </div>
+
+        <div class="nav-row">
+          <button class="btn btn-nav"  onclick="navigate(-1)" data-i18n="btn-prev">← Prev</button>
+          <span id="progress-text">0 / 0</span>
+          <button class="btn btn-nav"  onclick="navigate(1)"  data-i18n="btn-next">Next →</button>
+          <button class="btn btn-undo" onclick="undoState()"  data-i18n="btn-undo" id="undo-btn" disabled>↩ Undo</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Search side panel (画中画 launcher) -->
+<div id="sp-overlay" onclick="closeSearchPanel()"></div>
+<div id="search-panel">
+  <div class="sp-header">
+    <span class="sp-header-title" data-i18n="sp-panel-title">🔍 Search Reference</span>
+    <button class="sp-close" onclick="closeSearchPanel()">✕</button>
+  </div>
+  <div class="sp-tabs">
+    <button class="sp-tab active" id="sp-tab-scholar"  onclick="switchTab('scholar')"  data-i18n="btn-scholar">🔍 Google Scholar</button>
+    <button class="sp-tab"        id="sp-tab-semantic" onclick="switchTab('semantic')" data-i18n="btn-semantic">📖 Semantic Scholar</button>
+  </div>
+  <div class="sp-body">
+    <div class="sp-paper-box">
+      <div class="sp-paper-label" data-i18n="sp-searching">Searching for</div>
+      <div class="sp-paper-title" id="sp-paper-title"></div>
+    </div>
+
+    <button class="sp-side-btn sp-side-scholar" id="sp-side-scholar-btn" onclick="openSideWindow('scholar')" data-i18n="sp-open-scholar">
+      🔍 Open Google Scholar
+    </button>
+    <button class="sp-side-btn sp-side-semantic" id="sp-side-semantic-btn" onclick="openSideWindow('semantic')" style="display:none" data-i18n="sp-open-semantic">
+      📖 Open Semantic Scholar
+    </button>
+    <div class="sp-side-hint" data-i18n="sp-side-hint">Opens snapped to the right side of your screen</div>
+
+    <hr class="sp-divider">
+
+    <div class="sp-steps-title" data-i18n="sp-steps-title">How to get BibTeX</div>
+    <div class="sp-steps" id="sp-steps">
+      <!-- populated by JS based on active tab -->
+    </div>
+
+    <div class="sp-url-row">
+      <div class="sp-url-display" id="sp-url-display"></div>
+      <button class="sp-copy-btn" onclick="copySearchUrl()" data-i18n="sp-copy">Copy URL</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── i18n ──────────────────────────────────────────────────────────
+const I18N = {
+  en: {
+    'title':              '📚 BibTeX Reference Checker',
+    'download':           '⬇ Download .bib',
+    'bib-source':         'BibTeX Source',
+    'parse-btn':          'Parse Entries →',
+    'bib-placeholder':    'Paste your .bib file content here, then click "Parse Entries" →',
+    'list-placeholder':   'Parse entries to begin',
+    'checker-placeholder':'Select an entry from the list above to check it',
+    'btn-scholar':        '🔍 Google Scholar',
+    'btn-semantic':       '📖 Semantic Scholar',
+    'new-bib-label':      'Paste new BibTeX (Scholar → Cite → BibTeX):',
+    'new-bib-placeholder':'@inproceedings{key,\n  title={...},\n  author={...},\n  year={...},\n  booktitle={...}\n}',
+    'keep-key-label':     'Keep original key:',
+    'btn-replace':        '✅ Replace Entry',
+    'btn-keep':           '👍 Keep Original',
+    'btn-prev':           '← Prev',
+    'btn-next':           'Next →',
+    'btn-undo':           '↩ Undo',
+    'sp-panel-title':     '🔍 Search Reference',
+    'sp-searching':       'Searching for',
+    'sp-open-scholar':    '🔍 Open Google Scholar',
+    'sp-open-semantic':   '📖 Open Semantic Scholar',
+    'sp-side-hint':       'Opens snapped to the right side of your screen',
+    'sp-steps-title':     'How to get BibTeX',
+    'sp-copy':            'Copy URL',
+    'sp-steps-scholar':   ['Search and find your paper', 'Click "Cite" (") below the result', 'Click "BibTeX" → copy the text', 'Paste it in the box on the left'],
+    'sp-steps-semantic':  ['Search and find your paper', 'Click "Cite" on the paper page', 'Select "BibTeX" format → copy', 'Paste it in the box on the left'],
+    'badge-hint':         'Click to mark as checked / uncheck',
+    'btn-autofetch':      '✨ Auto-fetch BibTeX',
+    'fetch-loading':      'Searching Semantic Scholar…',
+    'fetch-ok':           s => `✅ Found: ${s}`,
+    'fetch-low':          s => `⚠️ Low confidence match: ${s} — check before replacing`,
+    'fetch-notfound':     '❌ Not found in Semantic Scholar or CrossRef',
+    'fetch-error':        '❌ Network error — try again',
+    'diff-title':         'Differences',
+    'diff-same':          '✅ No differences — content is identical',
+    'toast-parsed':       n => `Parsed ${n} entries`,
+    'toast-no-content':   'Paste your .bib content first',
+    'toast-no-entries':   'No entries found — check your BibTeX format',
+    'toast-no-new-bib':   'Paste the new BibTeX first',
+    'toast-not-found':    k => `Could not find @${k}`,
+    'toast-replaced':     '✅ Entry replaced',
+    'toast-nothing':      'Nothing to download',
+    'toast-downloading':  'Downloading main.bib',
+    'toast-undo':         '↩ Undone',
+    'toast-no-undo':      'Nothing to undo',
+    'toast-copied-url':   'URL copied to clipboard',
+    'stats-pending':      n => `⏳ ${n} pending`,
+    'stats-ok':           n => `✅ ${n} ok`,
+    'stats-replaced':     n => `🔄 ${n} replaced`,
+    'lang-btn':           '中文',
+  },
+  zh: {
+    'title':              '📚 BibTeX 参考文献核查工具',
+    'download':           '⬇ 下载 .bib',
+    'bib-source':         'BibTeX 内容',
+    'parse-btn':          '解析条目 →',
+    'bib-placeholder':    '将 .bib 文件内容粘贴到此处，然后点击"解析条目"→',
+    'list-placeholder':   '解析条目后开始核查',
+    'checker-placeholder':'从上方列表选择一条参考文献进行核查',
+    'btn-scholar':        '🔍 Google 学术',
+    'btn-semantic':       '📖 Semantic Scholar',
+    'new-bib-label':      '粘贴新 BibTeX（学术 → 引用 → BibTeX）：',
+    'new-bib-placeholder':'@inproceedings{key,\n  title={...},\n  author={...},\n  year={...},\n  booktitle={...}\n}',
+    'keep-key-label':     '保留原始 key：',
+    'btn-replace':        '✅ 替换条目',
+    'btn-keep':           '👍 保持不变',
+    'btn-prev':           '← 上一条',
+    'btn-next':           '下一条 →',
+    'btn-undo':           '↩ 撤销',
+    'sp-panel-title':     '🔍 检索参考文献',
+    'sp-searching':       '正在搜索',
+    'sp-open-scholar':    '🔍 打开 Google 学术',
+    'sp-open-semantic':   '📖 打开 Semantic Scholar',
+    'sp-side-hint':       '在屏幕右侧贴边打开新窗口',
+    'sp-steps-title':     '如何获取 BibTeX',
+    'sp-copy':            '复制链接',
+    'sp-steps-scholar':   ['搜索并找到目标论文', '点击结果下方的"引用"(⟨⟩)', '点击"BibTeX"→ 复制全文', '粘贴到左侧输入框'],
+    'sp-steps-semantic':  ['搜索并找到目标论文', '在论文页点击"Cite"', '选择 BibTeX 格式 → 复制', '粘贴到左侧输入框'],
+    'badge-hint':         '点击标记为已核查 / 取消标记',
+    'btn-autofetch':      '✨ 自动获取 BibTeX',
+    'fetch-loading':      '正在检索 Semantic Scholar…',
+    'fetch-ok':           s => `✅ 已找到：${s}`,
+    'fetch-low':          s => `⚠️ 匹配度较低：${s} — 请确认后替换`,
+    'fetch-notfound':     '❌ Semantic Scholar 和 CrossRef 均未找到',
+    'fetch-error':        '❌ 网络错误，请重试',
+    'diff-title':         '差异对比',
+    'diff-same':          '✅ 内容相同，无差异',
+    'toast-parsed':       n => `已解析 ${n} 条参考文献`,
+    'toast-no-content':   '请先粘贴 .bib 内容',
+    'toast-no-entries':   '未找到条目，请检查 BibTeX 格式',
+    'toast-no-new-bib':   '请先粘贴新的 BibTeX',
+    'toast-not-found':    k => `找不到 @${k}`,
+    'toast-replaced':     '✅ 条目已替换',
+    'toast-nothing':      '没有内容可下载',
+    'toast-downloading':  '正在下载 main.bib',
+    'toast-undo':         '↩ 已撤销',
+    'toast-no-undo':      '没有可撤销的操作',
+    'toast-copied-url':   '链接已复制到剪贴板',
+    'stats-pending':      n => `⏳ ${n} 待检查`,
+    'stats-ok':           n => `✅ ${n} 已确认`,
+    'stats-replaced':     n => `🔄 ${n} 已替换`,
+    'lang-btn':           'English',
+  }
+};
+
+let lang = 'en';
+
+function t(key, ...args) {
+  const v = I18N[lang][key];
+  return typeof v === 'function' ? v(...args) : (v || key);
+}
+
+function applyLang() {
+  document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    el.textContent = t(el.dataset.i18n);
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    el.placeholder = t(el.dataset.i18nPlaceholder);
+  });
+  if (entries.length === 0) {
+    const lp = document.querySelector('#entry-list-wrap .entry-placeholder');
+    if (lp) lp.textContent = t('list-placeholder');
+  }
+  updateStats();
+  updateUndoBtn();
+}
+
+function toggleLang() {
+  lang = lang === 'en' ? 'zh' : 'en';
+  applyLang();
+  if (entries.length > 0) renderEntryList();
+}
+
+// ── State ─────────────────────────────────────────────────────────
+let entries = [];
+let currentIdx = -1;
+let undoHistory = [];   // [{text, statuses}]
+
+// ── BibTeX parser ─────────────────────────────────────────────────
+function parseBib(text) {
+  const results = [];
+  let i = 0;
+  while (i < text.length) {
+    const at = text.indexOf('@', i);
+    if (at === -1) break;
+    let j = at + 1;
+    while (j < text.length && /\w/.test(text[j])) j++;
+    const type = text.slice(at + 1, j).trim().toLowerCase();
+    if (!type || type === 'string' || type === 'preamble' || type === 'comment') {
+      const ob = text.indexOf('{', j);
+      if (ob === -1) break;
+      let d = 0, k = ob;
+      for (; k < text.length; k++) {
+        if (text[k] === '{') d++;
+        else if (text[k] === '}') { d--; if (d === 0) { k++; break; } }
+      }
+      i = k; continue;
+    }
+    const ob = text.indexOf('{', j);
+    if (ob === -1) break;
+    let depth = 0, k = ob, inQuote = false;
+    for (; k < text.length; k++) {
+      const ch = text[k];
+      if (ch === '"' && depth === 1) inQuote = !inQuote;
+      if (!inQuote) {
+        if (ch === '{') depth++;
+        else if (ch === '}') { depth--; if (depth === 0) { k++; break; } }
+      }
+    }
+    const raw = text.slice(at, k);
+    const comma = raw.indexOf(',');
+    if (comma === -1) { i = k; continue; }
+    const key = raw.slice(raw.indexOf('{') + 1, comma).trim();
+    if (!key || /\s/.test(key)) { i = k; continue; }
+    const f = extractFields(raw);
+    results.push({
+      key, type, raw, start: at, end: k,
+      title:   cleanStr(f.title   || '(no title)'),
+      authors: cleanStr(f.author  || ''),
+      year:    (f.year || '').replace(/[{}]/g, '').trim(),
+      venue:   cleanStr(f.journal || f.booktitle || f.howpublished || ''),
+      status: 'pending',
+    });
+    i = k;
+  }
+  return results;
+}
+
+function extractFields(raw) {
+  const fields = {};
+  const re = /\b([a-zA-Z]\w*)\s*=\s*/g;
+  let m;
+  while ((m = re.exec(raw)) !== null) {
+    const name = m[1].toLowerCase();
+    const pos = m.index + m[0].length;
+    const ch = raw[pos];
+    let val = '';
+    if (ch === '{') {
+      let d = 0, j = pos;
+      for (; j < raw.length; j++) {
+        if (raw[j] === '{') d++;
+        else if (raw[j] === '}') { d--; if (d === 0) { j++; break; } }
+      }
+      val = raw.slice(pos + 1, j - 1);
+    } else if (ch === '"') {
+      const end = raw.indexOf('"', pos + 1);
+      val = end === -1 ? '' : raw.slice(pos + 1, end);
+    } else {
+      const end = raw.slice(pos).search(/[,}\s]/);
+      val = end === -1 ? raw.slice(pos) : raw.slice(pos, pos + end);
+    }
+    fields[name] = val;
+  }
+  return fields;
+}
+
+function cleanStr(s) {
+  if (!s) return '';
+  return s.replace(/\{\\['"` ^~cduHkrtvb]\s*\{?([a-zA-Z])\}?\}/g, '$1')
+          .replace(/\\[a-zA-Z]+\s*/g, '')
+          .replace(/[{}\\"]/g, '')
+          .replace(/\s+/g, ' ').trim();
+}
+
+// ── Parse & render ────────────────────────────────────────────────
+function reparsePreservingStatus() {
+  const sm = {};
+  entries.forEach(e => { sm[e.key] = e.status; });
+  entries = parseBib(document.getElementById('bib-textarea').value);
+  entries.forEach(e => { if (sm[e.key]) e.status = sm[e.key]; });
+}
+
+function parseAndRender() {
+  const text = document.getElementById('bib-textarea').value;
+  if (!text.trim()) { showToast(t('toast-no-content')); return; }
+  entries = parseBib(text);
+  if (entries.length === 0) { showToast(t('toast-no-entries')); return; }
+  undoHistory = [];
+  updateUndoBtn();
+  renderEntryList();
+  selectEntry(0);
+  showToast(t('toast-parsed', entries.length));
+}
+
+function renderEntryList() {
+  const wrap = document.getElementById('entry-list-wrap');
+  wrap.innerHTML = '';
+  if (entries.length === 0) {
+    wrap.innerHTML = `<div class="entry-placeholder">${t('list-placeholder')}</div>`;
+    return;
+  }
+  const hint = t('badge-hint');
+  entries.forEach((e, i) => {
+    const div = document.createElement('div');
+    div.className = 'entry-item' + (i === currentIdx ? ' active' : '');
+    div.dataset.idx = i;
+    div.onclick = () => selectEntry(i);
+    const badge = e.status === 'ok' ? '✅' : e.status === 'replaced' ? '🔄' : '⏳';
+    div.innerHTML =
+      `<span class="entry-badge" title="${hint}" data-idx="${i}" onclick="toggleStatus(${i},event)">${badge}</span>` +
+      `<span class="entry-key" title="${e.key}">${e.key}</span>` +
+      `<span class="entry-title-small" title="${e.title}">${e.title}</span>`;
+    wrap.appendChild(div);
+  });
+  updateStats();
+}
+
+// ── Toggle status by clicking badge ──────────────────────────────
+function toggleStatus(idx, event) {
+  event.stopPropagation();
+  pushHistory();
+  const e = entries[idx];
+  if (e.status === 'pending') {
+    e.status = 'ok';
+  } else if (e.status === 'ok') {
+    e.status = 'pending';
+  }
+  // 'replaced' stays replaced (don't toggle)
+  renderEntryList();
+  updateStats();
+}
+
+// ── Select entry ──────────────────────────────────────────────────
+function selectEntry(idx) {
+  if (idx < 0 || idx >= entries.length) return;
+  currentIdx = idx;
+  const e = entries[idx];
+
+  document.querySelectorAll('.entry-item').forEach((el, i) => {
+    el.classList.toggle('active', i === idx);
+    if (i === idx) el.scrollIntoView({ block: 'nearest' });
+  });
+
+  highlightInBib(e);
+
+  document.getElementById('checker-placeholder').style.display = 'none';
+  const ac = document.getElementById('active-checker');
+  ac.style.display = 'flex';
+
+  const authShort = e.authors.length > 100 ? e.authors.slice(0, 100) + '…' : e.authors;
+  document.getElementById('entry-info').innerHTML =
+    `<div class="info-title">${e.title}</div>` +
+    `<div class="info-row">` +
+    (e.authors ? `<b>${lang==='zh'?'作者':'Authors'}:</b> ${authShort}<br>` : '') +
+    (e.year    ? `<b>${lang==='zh'?'年份':'Year'}:</b> ${e.year}` : '') +
+    (e.year && e.venue ? ' &nbsp;·&nbsp; ' : '') +
+    (e.venue   ? `<b>${lang==='zh'?'来源':'Venue'}:</b> ${e.venue.slice(0,80)}` : '') +
+    `<br><b>Type:</b> @${e.type} &nbsp; <b>Key:</b> <code>${e.key}</code>` +
+    `</div>`;
+
+  document.getElementById('key-display').textContent = e.key;
+  document.getElementById('new-bib').value = '';
+  document.getElementById('diff-view').style.display = 'none';
+  document.getElementById('fetch-status').className = 'fetch-status';
+  document.getElementById('fetch-status').innerHTML = '';
+  document.getElementById('progress-text').textContent = `${idx + 1} / ${entries.length}`;
+  updateStats();
+}
+
+function highlightInBib(entry) {
+  const ta = document.getElementById('bib-textarea');
+  const text = ta.value;
+  const re = new RegExp('@\\w+\\s*\\{\\s*' + escapeRe(entry.key) + '\\s*,', 'i');
+  const m = re.exec(text);
+  if (!m) return;
+  let depth = 0, i = m.index;
+  for (; i < text.length; i++) {
+    if (text[i] === '{') depth++;
+    else if (text[i] === '}') { depth--; if (depth === 0) { i++; break; } }
+  }
+  ta.focus();
+  ta.setSelectionRange(m.index, i);
+  const lines = text.slice(0, m.index).split('\n').length;
+  const lineH = parseFloat(getComputedStyle(ta).lineHeight) || 17;
+  ta.scrollTop = Math.max(0, (lines - 3) * lineH);
+}
+
+// ── Undo ──────────────────────────────────────────────────────────
+function pushHistory() {
+  undoHistory.push({
+    text: document.getElementById('bib-textarea').value,
+    statuses: entries.map(e => ({ key: e.key, status: e.status })),
+    idx: currentIdx,
+  });
+  if (undoHistory.length > 30) undoHistory.shift();
+  updateUndoBtn();
+}
+
+function undoState() {
+  if (!undoHistory.length) { showToast(t('toast-no-undo')); return; }
+  const s = undoHistory.pop();
+  document.getElementById('bib-textarea').value = s.text;
+  reparsePreservingStatus();
+  s.statuses.forEach(({ key, status }) => {
+    const e = entries.find(x => x.key === key);
+    if (e) e.status = status;
+  });
+  renderEntryList();
+  selectEntry(s.idx >= 0 && s.idx < entries.length ? s.idx : currentIdx);
+  updateUndoBtn();
+  showToast(t('toast-undo'));
+}
+
+function updateUndoBtn() {
+  const btn = document.getElementById('undo-btn');
+  if (!btn) return;
+  btn.disabled = undoHistory.length === 0;
+  btn.textContent = t('btn-undo') + (undoHistory.length > 0 ? ` (${undoHistory.length})` : '');
+}
+
+// ── Auto-fetch BibTeX from Semantic Scholar + CrossRef ────────────
+function titleWords(s) {
+  return new Set(s.toLowerCase().replace(/[^a-z0-9 ]/g,' ').split(/\s+/).filter(Boolean));
+}
+function titleSim(a, b) {
+  const wa = titleWords(a), wb = titleWords(b);
+  if (!wa.size || !wb.size) return 0;
+  let inter = 0; for (const w of wa) if (wb.has(w)) inter++;
+  return inter / Math.max(wa.size, wb.size);
+}
+
+function setFetchStatus(cls, html) {
+  const el = document.getElementById('fetch-status');
+  el.className = 'fetch-status ' + cls;
+  el.innerHTML = html;
+}
+
+async function fetchFromS2(title) {
+  const q = encodeURIComponent(title);
+  const url = `https://api.semanticscholar.org/graph/v1/paper/search?query=${q}&limit=3&fields=title,authors,year,venue,publicationVenue,externalIds,publicationTypes,journal`;
+  const res = await fetch(url);
+  if (!res.ok) return null;
+  const data = await res.json();
+  for (const paper of (data.data || [])) {
+    if (titleSim(title, paper.title) >= 0.65) return paper;
+  }
+  return null;
+}
+
+async function fetchFromCrossRef(title) {
+  const q = encodeURIComponent(title);
+  const url = `https://api.crossref.org/works?query.title=${q}&rows=3&mailto=bib-checker@tool.com`;
+  const res = await fetch(url);
+  if (!res.ok) return null;
+  const data = await res.json();
+  for (const item of (data.message?.items || [])) {
+    const ct = (item.title || [''])[0];
+    if (titleSim(title, ct) >= 0.65) return item;
+  }
+  return null;
+}
+
+function formatFromS2(key, p) {
+  const isJournal = (p.publicationTypes || []).includes('JournalArticle');
+  const venue = p.publicationVenue?.name || p.journal?.name || p.venue || '';
+  const doi   = p.externalIds?.DOI  || '';
+  const arxiv = p.externalIds?.ArXiv || '';
+  const type  = isJournal ? 'article' : 'inproceedings';
+
+  const authorStr = (p.authors || []).map(a => {
+    const parts = a.name.trim().split(/\s+/);
+    if (parts.length === 1) return parts[0];
+    const last = parts.pop();
+    return `${last}, ${parts.join(' ')}`;
+  }).join(' and ');
+
+  let b = `@${type}{${key},\n`;
+  b += `  title     = {${p.title}},\n`;
+  b += `  author    = {${authorStr}},\n`;
+  if (p.year)   b += `  year      = {${p.year}},\n`;
+  if (venue)    b += `  ${isJournal ? 'journal  ' : 'booktitle'} = {${venue}},\n`;
+  if (doi)      b += `  doi       = {${doi}},\n`;
+  else if (arxiv) b += `  url       = {https://arxiv.org/abs/${arxiv}},\n`;
+  b += `}`;
+  return { bib: b, found: p.title, sim: titleSim(key, p.title || '') };
+}
+
+function formatFromCrossRef(key, item) {
+  const title  = (item.title || [''])[0];
+  const type   = item.type || '';
+  const isJournal = type.includes('journal');
+  const bibType = isJournal ? 'article' : 'inproceedings';
+  const venue  = (item['container-title'] || [''])[0];
+  const doi    = item.DOI || '';
+  const year   = String((item['published-print'] || item['published-online'] || item.created || {})?.['date-parts']?.[0]?.[0] || '');
+
+  const authorStr = (item.author || []).map(a => {
+    const family = a.family || '';
+    const given  = a.given  || '';
+    return given ? `${family}, ${given}` : family;
+  }).join(' and ');
+
+  let b = `@${bibType}{${key},\n`;
+  b += `  title     = {${title}},\n`;
+  if (authorStr) b += `  author    = {${authorStr}},\n`;
+  if (year)      b += `  year      = {${year}},\n`;
+  if (venue)     b += `  ${isJournal ? 'journal  ' : 'booktitle'} = {${venue}},\n`;
+  if (doi)       b += `  doi       = {${doi}},\n`;
+  b += `}`;
+  return { bib: b, found: title };
+}
+
+let fetchDelay = parseInt(localStorage.getItem('bib-fetch-delay') || '3');
+
+function setFetchDelay(val) {
+  fetchDelay = parseInt(val);
+  localStorage.setItem('bib-fetch-delay', fetchDelay);
+}
+
+function autoFetchBib() {
+  if (currentIdx < 0) return;
+  const url = getSearchUrl('scholar') + `&bib-checker=1&bib-delay=${fetchDelay}`;
+  chrome.runtime.sendMessage({ type: 'bib-ext-open-scholar', url });
+  setFetchStatus('loading', `<span class="spinner"></span> ${lang === 'zh' ? '已打开 Google Scholar，扩展自动运行中…' : 'Opened Google Scholar, extension running…'}`);
+}
+
+// ── Diff view ─────────────────────────────────────────────────────
+function updateDiffView() {
+  const diffEl = document.getElementById('diff-view');
+  const newBibText = document.getElementById('new-bib').value.trim();
+  if (!newBibText || currentIdx < 0) { diffEl.style.display = 'none'; return; }
+
+  const oldEntry = entries[currentIdx];
+  const oldFields = extractFields(oldEntry.raw);
+  const oldType = oldEntry.type;
+
+  // Parse new bib (wrap if user pasted only fields without @type{key,...})
+  let text = newBibText;
+  if (!text.startsWith('@')) text = `@misc{__tmp__,\n${text}\n}`;
+  const parsed = parseBib(text);
+  if (!parsed.length) { diffEl.style.display = 'none'; return; }
+  const newE = parsed[0];
+  const newFields = extractFields(newE.raw);
+  const newType = newE.type;
+
+  const rows = [];
+
+  // Type comparison
+  if (oldType !== newType) {
+    rows.push({ field: 'type', old: `@${oldType}`, new: `@${newType}`, status: 'changed' });
+  }
+
+  // Field comparison
+  const allFields = new Set([...Object.keys(oldFields), ...Object.keys(newFields)]);
+  allFields.delete('');
+  // Prioritized display order
+  const priority = ['title','author','year','booktitle','journal','volume','pages','publisher','doi','url','note'];
+  const sorted = [...priority.filter(f => allFields.has(f)), ...[...allFields].filter(f => !priority.includes(f))];
+
+  for (const f of sorted) {
+    if (['key'].includes(f)) continue;
+    const ov = cleanStr(oldFields[f] || '');
+    const nv = cleanStr(newFields[f] || '');
+    if (!ov && !nv) continue;
+    if (ov === nv) continue;
+    rows.push({
+      field: f,
+      old: ov || '',
+      new: nv || '',
+      status: !ov ? 'added' : !nv ? 'removed' : 'changed',
+    });
+  }
+
+  if (!rows.length) {
+    diffEl.innerHTML = `<div class="diff-same-msg">${t('diff-same')}</div>`;
+    diffEl.style.display = 'block';
+    return;
+  }
+
+  const trunc = s => s.length > 90 ? s.slice(0, 90) + '…' : s;
+  let html = `<div class="diff-title">${t('diff-title')}</div><table class="diff-table">`;
+  for (const r of rows) {
+    html += `<tr class="diff-${r.status}">
+      <td class="diff-field">${r.field}</td>
+      <td class="diff-old">${r.status !== 'added'   ? trunc(r.old) : '<span style="color:#9ca3af">—</span>'}</td>
+      <td class="diff-arrow">→</td>
+      <td class="diff-new">${r.status !== 'removed' ? trunc(r.new) : '<span style="color:#9ca3af">—</span>'}</td>
+    </tr>`;
+  }
+  html += '</table>';
+  diffEl.innerHTML = html;
+  diffEl.style.display = 'block';
+}
+
+// ── Search side panel (画中画 launcher) ───────────────────────────
+let currentSearchTab = 'scholar';
+let _sideWindow = null;
+
+function getSearchUrl(service) {
+  if (currentIdx < 0) return '';
+  const q = encodeURIComponent(entries[currentIdx].title);
+  return service === 'scholar'
+    ? `https://scholar.google.com/scholar?q=${q}`
+    : `https://www.semanticscholar.org/search?q=${q}&sort=Relevance`;
+}
+
+function openDirect(service) {
+  if (currentIdx < 0) return;
+  let url = getSearchUrl(service);
+  if (service === 'scholar') {
+    url += `&bib-checker=1&bib-delay=${fetchDelay}`;
+    chrome.runtime.sendMessage({ type: 'bib-ext-open-scholar', url });
+  } else {
+    window.open(url, '_blank');
+  }
+}
+
+function openSearch(service) {
+  if (currentIdx < 0) return;
+  currentSearchTab = service;
+  updateSearchPanel(service);
+  document.getElementById('search-panel').classList.add('open');
+  document.getElementById('sp-overlay').classList.add('show');
+}
+
+function switchTab(service) {
+  currentSearchTab = service;
+  updateSearchPanel(service);
+}
+
+function updateSearchPanel(service) {
+  const url = getSearchUrl(service);
+  const e = entries[currentIdx];
+
+  // Tabs
+  document.getElementById('sp-tab-scholar').classList.toggle('active',  service === 'scholar');
+  document.getElementById('sp-tab-semantic').classList.toggle('active', service === 'semantic');
+
+  // Paper title
+  document.getElementById('sp-paper-title').textContent = e ? e.title : '';
+
+  // Primary action button
+  document.getElementById('sp-side-scholar-btn').style.display  = service === 'scholar'  ? '' : 'none';
+  document.getElementById('sp-side-semantic-btn').style.display = service === 'semantic' ? '' : 'none';
+
+  // URL bar
+  document.getElementById('sp-url-display').textContent = url;
+
+  // Steps
+  const steps = t('sp-steps-' + service);
+  const stepsHtml = steps.map((s, i) =>
+    `<div class="sp-step"><div class="sp-step-num">${i+1}</div><div>${s}</div></div>`
+  ).join('');
+  document.getElementById('sp-steps').innerHTML = stepsHtml;
+}
+
+function openSideWindow(service) {
+  const url = getSearchUrl(service);
+  if (!url) return;
+
+  const totalW = screen.availWidth;
+  const totalH = screen.availHeight;
+  const screenLeft = screen.availLeft;
+  const screenTop  = screen.availTop;
+
+  const sideW = Math.round(totalW * 0.48);
+  const mainW = totalW - sideW;
+
+  // Try to snap main window to left half
+  try {
+    window.moveTo(screenLeft, screenTop);
+    window.resizeTo(mainW, totalH);
+  } catch(e) { /* restricted in regular tabs — ignore */ }
+
+  // Scholar window on the right half
+  const sideLeft = screenLeft + mainW;
+  if (_sideWindow && !_sideWindow.closed) {
+    _sideWindow.location.href = url;
+    try {
+      _sideWindow.moveTo(sideLeft, screenTop);
+      _sideWindow.resizeTo(sideW, totalH);
+    } catch(e) {}
+    _sideWindow.focus();
+  } else {
+    _sideWindow = window.open(
+      url, 'bib_search_panel',
+      `width=${sideW},height=${totalH},left=${sideLeft},top=${screenTop},resizable=yes,scrollbars=yes,toolbar=yes`
+    );
+  }
+  closeSearchPanel();
+}
+
+function copySearchUrl() {
+  const url = getSearchUrl(currentSearchTab);
+  if (!url) return;
+  navigator.clipboard.writeText(url).then(() => showToast(t('toast-copied-url')));
+}
+
+function closeSearchPanel() {
+  document.getElementById('search-panel').classList.remove('open');
+  document.getElementById('sp-overlay').classList.remove('show');
+}
+
+// ── Actions ───────────────────────────────────────────────────────
+function replaceEntry() {
+  if (currentIdx < 0) return;
+  let newBib = document.getElementById('new-bib').value.trim();
+  if (!newBib) { showToast(t('toast-no-new-bib')); return; }
+  const e = entries[currentIdx];
+  if (document.getElementById('keep-key').checked) {
+    newBib = newBib.replace(/^(@\w+\s*\{\s*)[\w:._\-]+/, `$1${e.key}`);
+  }
+  const ta = document.getElementById('bib-textarea');
+  const text = ta.value;
+  const re = new RegExp('@\\w+\\s*\\{\\s*' + escapeRe(e.key) + '\\s*,', 'i');
+  const m = re.exec(text);
+  if (!m) { showToast(t('toast-not-found', e.key)); return; }
+  pushHistory();
+  let depth = 0, i = m.index;
+  for (; i < text.length; i++) {
+    if (text[i] === '{') depth++;
+    else if (text[i] === '}') { depth--; if (depth === 0) { i++; break; } }
+  }
+  ta.value = text.slice(0, m.index) + newBib + text.slice(i);
+  reparsePreservingStatus();
+  const newIdx = entries.findIndex(x => x.key === e.key);
+  if (newIdx !== -1) { entries[newIdx].status = 'replaced'; currentIdx = newIdx; }
+  renderEntryList();
+  showToast(t('toast-replaced'));
+  setTimeout(() => {
+    const ni = findNextPending(newIdx !== -1 ? newIdx : currentIdx);
+    selectEntry(ni !== -1 ? ni : currentIdx);
+  }, 350);
+}
+
+function keepOriginal() {
+  if (currentIdx < 0) return;
+  pushHistory();
+  entries[currentIdx].status = 'ok';
+  renderEntryList();
+  const next = findNextPending(currentIdx);
+  selectEntry(next !== -1 ? next : currentIdx);
+}
+
+function findNextPending(from) {
+  for (let i = from + 1; i < entries.length; i++) {
+    if (entries[i].status === 'pending') return i;
+  }
+  for (let i = 0; i <= from; i++) {
+    if (entries[i].status === 'pending') return i;
+  }
+  return -1;
+}
+
+function navigate(dir) {
+  const next = currentIdx + dir;
+  if (next >= 0 && next < entries.length) selectEntry(next);
+}
+
+function updateStats() {
+  if (entries.length === 0) { document.getElementById('stats').innerHTML = ''; return; }
+  const pending  = entries.filter(e => e.status === 'pending').length;
+  const ok       = entries.filter(e => e.status === 'ok').length;
+  const replaced = entries.filter(e => e.status === 'replaced').length;
+  document.getElementById('stats').innerHTML =
+    `<span>${t('stats-pending', pending)}</span>` +
+    `<span>${t('stats-ok', ok)}</span>` +
+    `<span>${t('stats-replaced', replaced)}</span>`;
+}
+
+function downloadBib() {
+  const text = document.getElementById('bib-textarea').value;
+  if (!text.trim()) { showToast(t('toast-nothing')); return; }
+  const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'main.bib';
+  a.click();
+  showToast(t('toast-downloading'));
+}
+
+function escapeRe(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(el._timer);
+  el._timer = setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+// ── Receive BibTeX from Scholar extension ─────────────────────────
+chrome.runtime.onMessage.addListener((msg) => {
+  if (msg.type !== 'bib-checker-bib') return;
+  const bib = msg.bib;
+  if (!bib || currentIdx < 0) return;
+  document.getElementById('new-bib').value = bib;
+  updateDiffView();
+  setFetchStatus('ok', lang === 'zh' ? '✅ 已从 Google Scholar 获取，正在替换…' : '✅ Received, replacing…');
+  closeScholarWindow();
+  // Auto-replace, then auto-fetch next entry
+  setTimeout(() => {
+    replaceEntry();
+    const next = findNextPending(currentIdx);
+    if (next !== -1) {
+      setFetchStatus('ok', lang === 'zh' ? `✅ 已替换，${fetchDelay} 秒后获取下一条…` : `✅ Replaced, fetching next in ${fetchDelay} s…`);
+      setTimeout(() => autoFetchBib(), fetchDelay * 1000);
+    } else {
+      setFetchStatus('ok', lang === 'zh' ? '🎉 所有条目已处理完毕' : '🎉 All entries processed');
+    }
+  }, 400);
+});
+
+function closeScholarWindow() {
+  if (_sideWindow && !_sideWindow.closed) {
+    _sideWindow.close();
+    _sideWindow = null;
+  }
+}
+
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
+  if (e.key === 'Escape') { closeSearchPanel(); return; }
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); navigate(1); }
+  if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   { e.preventDefault(); navigate(-1); }
+  if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undoState(); }
+});
+
+// ── Auto-replace on paste ─────────────────────────────────────────
+function isCompleteBib(text) {
+  const t = text.trim();
+  if (!t.startsWith('@')) return false;
+  let depth = 0;
+  for (const ch of t) {
+    if (ch === '{') depth++;
+    else if (ch === '}') { depth--; if (depth === 0) return true; }
+  }
+  return false;
+}
+
+document.getElementById('new-bib').addEventListener('paste', () => {
+  setTimeout(() => updateDiffView(), 30);
+});
+
+// Paste anywhere on the page (not in a focused input) → fill new-bib + show diff
+document.addEventListener('paste', (e) => {
+  if (e.target.id === 'new-bib' || e.target.id === 'bib-textarea') return;
+  if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
+  if (currentIdx < 0) return;
+  const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+  if (isCompleteBib(text)) {
+    document.getElementById('new-bib').value = text;
+    updateDiffView();
+    closeScholarWindow();
+    e.preventDefault();
+  }
+});
+
+// ── Persist bib content across refreshes ─────────────────────────
+let _saveTimer;
+function saveBib() {
+  clearTimeout(_saveTimer);
+  _saveTimer = setTimeout(() => {
+    localStorage.setItem('bib-checker-content', document.getElementById('bib-textarea').value);
+  }, 600);
+}
+
+// Init
+lang = 'zh';
+applyLang();
+const _saved = localStorage.getItem('bib-checker-content');
+if (_saved) {
+  document.getElementById('bib-textarea').value = _saved;
+  parseAndRender();
+}
+// Restore delay selector
+document.getElementById('delay-select').value = fetchDelay;
+</script>
+</body>
+</html>

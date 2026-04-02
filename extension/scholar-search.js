@@ -119,13 +119,9 @@ async function run() {
       const bibText = res.text;
       // Auto-copy to clipboard
       navigator.clipboard.writeText(bibText).catch(() => {});
-      // Auto-send back to bib-checker tool if still open
-      if (window.opener) {
-        try { window.opener.postMessage({ type: 'bib-checker-bib', bib: bibText }, '*'); } catch(e) {}
-      }
+      // Relay BibTeX to checker tab via background (background also closes this tab after 1.5s)
+      chrome.runtime.sendMessage({ type: 'bib-result', bib: bibText });
       showResult(bibText);
-      // Close this Scholar tab after a short delay
-      setTimeout(() => chrome.runtime.sendMessage({ type: 'close-current-tab' }), 1500);
     } else {
       setMsg('❌ 获取失败：' + (res?.error || '未知错误'));
     }
@@ -167,9 +163,6 @@ function showResult(bib) {
         if (btn) { btn.textContent = '复制 BibTeX'; btn.style.background = '#059669'; }
       }, 2000);
     });
-    if (window.opener) {
-      try { window.opener.postMessage({ type: 'bib-checker-bib', bib }, '*'); } catch(e) {}
-    }
   }
 
   document.getElementById('bib-copy-btn').onclick = doCopy;
