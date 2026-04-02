@@ -187,4 +187,5 @@ function showResult(bib) {
 
 // ── Start ─────────────────────────────────────────────────────────
 const _bibDelay = parseInt(new URLSearchParams(location.search).get('bib-delay') || '3');
+setMsg('⏳ 等待页面加载…', false);  // fill banner immediately; run() will update it
 setTimeout(run, 500);
