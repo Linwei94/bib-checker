@@ -38,7 +38,7 @@ let cancelled = false;
 function setMsg(msg, showCountdown) {
   banner.innerHTML = `
     <span id="bib-banner-msg">${msg}</span>
-    ${showCountdown ? '<span class="bib-countdown" id="bib-cd">3</span>' : ''}
+    ${showCountdown ? `<span class="bib-countdown" id="bib-cd">${_bibDelay}</span>` : ''}
     <button class="bib-btn-cancel" id="bib-cancel">✕ 取消</button>
   `;
   document.getElementById('bib-cancel').onclick = () => {
@@ -85,7 +85,7 @@ async function run() {
   cite.classList.add('bib-highlight');
   cite.scrollIntoView({ behavior: 'smooth', block: 'center' });
   setMsg('Step 1 / 2 &nbsp;—&nbsp; 即将点击 <b>Cite</b> 按钮', true);
-  await countdown(3);
+  await countdown(_bibDelay);
   if (cancelled) return;
 
   cite.classList.remove('bib-highlight');
@@ -106,7 +106,7 @@ async function run() {
 
   bib.classList.add('bib-highlight');
   setMsg('Step 2 / 2 &nbsp;—&nbsp; 即将点击 <b>BibTeX</b> 链接', true);
-  await countdown(3);
+  await countdown(_bibDelay);
   if (cancelled) return;
 
   bib.classList.remove('bib-highlight');
@@ -182,4 +182,5 @@ function showResult(bib) {
 }
 
 // ── Start ─────────────────────────────────────────────────────────
+const _bibDelay = parseInt(new URLSearchParams(location.search).get('bib-delay') || '3');
 setTimeout(run, 500);

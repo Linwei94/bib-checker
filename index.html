@@ -340,7 +340,19 @@ header h1 { font-size: 1rem; font-weight: 700; }
       <div id="active-checker" style="display:none; flex-direction:column; gap:10px; flex:1;">
         <div class="entry-info" id="entry-info"></div>
 
-        <button class="btn btn-autofetch" id="autofetch-btn" onclick="autoFetchBib()" data-i18n="btn-autofetch">✨ 自动获取 BibTeX</button>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <button class="btn btn-autofetch" id="autofetch-btn" onclick="autoFetchBib()" data-i18n="btn-autofetch" style="flex:1;min-width:180px;">✨ 自动获取 BibTeX</button>
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:#64748b;white-space:nowrap;">
+            <span data-i18n="delay-label">间隔</span>
+            <select id="delay-select" onchange="setFetchDelay(this.value)" style="padding:4px 8px;border:1px solid #cbd5e1;border-radius:6px;font-size:13px;background:white;cursor:pointer;">
+              <option value="1">1 s</option>
+              <option value="2">2 s</option>
+              <option value="3" selected>3 s</option>
+              <option value="5">5 s</option>
+              <option value="10">10 s</option>
+            </select>
+          </label>
+        </div>
         <div class="fetch-status" id="fetch-status"></div>
 
         <div class="btn-row">
@@ -885,9 +897,16 @@ function formatFromCrossRef(key, item) {
   return { bib: b, found: title };
 }
 
+let fetchDelay = parseInt(localStorage.getItem('bib-fetch-delay') || '3');
+
+function setFetchDelay(val) {
+  fetchDelay = parseInt(val);
+  localStorage.setItem('bib-fetch-delay', fetchDelay);
+}
+
 function autoFetchBib() {
   if (currentIdx < 0) return;
-  const url = getSearchUrl('scholar') + '&bib-checker=1';
+  const url = getSearchUrl('scholar') + `&bib-checker=1&bib-delay=${fetchDelay}`;
   // Use bridge → background → chrome.tabs.create() to bypass user-gesture requirement
   window.postMessage({ type: 'bib-ext-open-scholar', url }, '*');
   setFetchStatus('loading', `<span class="spinner"></span> ${lang === 'zh' ? '已打开 Google Scholar，扩展自动运行中…' : 'Opened Google Scholar, extension running…'}`);
@@ -976,7 +995,7 @@ function getSearchUrl(service) {
 function openDirect(service) {
   if (currentIdx < 0) return;
   let url = getSearchUrl(service);
-  if (service === 'scholar') url += '&bib-checker=1';
+  if (service === 'scholar') url += `&bib-checker=1&bib-delay=${fetchDelay}`;
   window.open(url, '_blank');
 }
 
@@ -1168,8 +1187,8 @@ window.addEventListener('message', (e) => {
     replaceEntry();
     const next = findNextPending(currentIdx);
     if (next !== -1) {
-      setFetchStatus('ok', lang === 'zh' ? '✅ 已替换，3 秒后获取下一条…' : '✅ Replaced, fetching next in 3 s…');
-      setTimeout(() => autoFetchBib(), 3000);
+      setFetchStatus('ok', lang === 'zh' ? `✅ 已替换，${fetchDelay} 秒后获取下一条…` : `✅ Replaced, fetching next in ${fetchDelay} s…`);
+      setTimeout(() => autoFetchBib(), fetchDelay * 1000);
     } else {
       setFetchStatus('ok', lang === 'zh' ? '🎉 所有条目已处理完毕' : '🎉 All entries processed');
     }
@@ -1238,6 +1257,8 @@ if (_saved) {
   document.getElementById('bib-textarea').value = _saved;
   parseAndRender();
 }
+// Restore delay selector
+document.getElementById('delay-select').value = fetchDelay;
 </script>
 </body>
 </html>
