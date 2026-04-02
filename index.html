@@ -885,42 +885,10 @@ function formatFromCrossRef(key, item) {
   return { bib: b, found: title };
 }
 
-async function autoFetchBib() {
+function autoFetchBib() {
   if (currentIdx < 0) return;
-  const entry = entries[currentIdx];
-  const btn = document.getElementById('autofetch-btn');
-  btn.disabled = true;
-  setFetchStatus('loading', `<span class="spinner"></span> ${t('fetch-loading')}`);
-
-  try {
-    let result = null;
-
-    const s2 = await fetchFromS2(entry.title);
-    if (s2) {
-      result = formatFromS2(entry.key, s2);
-    } else {
-      const cr = await fetchFromCrossRef(entry.title);
-      if (cr) result = formatFromCrossRef(entry.key, cr);
-    }
-
-    if (!result) {
-      setFetchStatus('error', t('fetch-notfound'));
-    } else {
-      const sim = titleSim(entry.title, result.found);
-      document.getElementById('new-bib').value = result.bib;
-      updateDiffView();
-      const label = result.found.slice(0, 60) + (result.found.length > 60 ? '…' : '');
-      if (sim >= 0.8) {
-        setFetchStatus('ok', t('fetch-ok', label));
-      } else {
-        setFetchStatus('warn', t('fetch-low', result.found.slice(0, 50) + '…'));
-      }
-    }
-  } catch(e) {
-    setFetchStatus('error', t('fetch-error'));
-  } finally {
-    btn.disabled = false;
-  }
+  openDirect('scholar');
+  setFetchStatus('loading', `<span class="spinner"></span> ${lang === 'zh' ? '已打开 Google Scholar，扩展自动运行中…' : 'Opened Google Scholar, extension running…'}`);
 }
 
 // ── Diff view ─────────────────────────────────────────────────────
