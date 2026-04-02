@@ -1,4 +1,4 @@
-if (!new URLSearchParams(location.search).get('bib-checker')) return;
+const fromBibChecker = !!new URLSearchParams(location.search).get('bib-checker');
 
 // ── Show status banner ────────────────────────────────────────────
 const banner = document.createElement('div');
@@ -11,7 +11,7 @@ banner.style.cssText = `
   box-shadow:0 2px 8px rgba(0,0,0,.3);
 `;
 banner.innerHTML = `<span id="bib-banner-spinner" style="display:inline-block;width:13px;height:13px;border:2px solid white;border-top-color:transparent;border-radius:50%;animation:bib-spin .7s linear infinite"></span>
-<span id="bib-banner-msg">BibTeX Checker: 正在查找引用按钮…</span>`;
+<span id="bib-banner-msg">${fromBibChecker ? 'BibTeX Checker: 正在查找引用按钮…' : 'BibTeX Checker 扩展已就绪 ✓ (从工具打开 Scholar 以自动获取)'}</span>`;
 const style = document.createElement('style');
 style.textContent = `@keyframes bib-spin{to{transform:rotate(360deg)}}`;
 document.head.appendChild(style);
@@ -69,4 +69,5 @@ function clickCite() {
   setTimeout(clickBibtex, 800);
 }
 
-setTimeout(clickCite, 1200);
+if (fromBibChecker) setTimeout(clickCite, 1200);
+else setTimeout(() => banner.remove(), 3000);
