@@ -263,11 +263,46 @@ function computeHasDiff(origRaw, scholarRaw) {
   const allKeys = new Set([...Object.keys(of), ...Object.keys(sf)]);
   for (const k of allKeys) {
     if (k === 'key') continue;
-    const ov = cleanStr(of[k] || '');
-    const sv = cleanStr(sf[k] || '');
+    const ov = cleanStr(of[k] || '').toLowerCase();
+    const sv = cleanStr(sf[k] || '').toLowerCase();
     if (ov !== sv) return true;
   }
   return false;
+}
+
+// LCS on two string arrays (case-already-normalised), returns matching index pairs
+function lcsIndices(a, b) {
+  const m = a.length, n = b.length;
+  if (m === 0 || n === 0 || m > 120 || n > 120) return [];
+  const dp = Array.from({ length: m + 1 }, () => new Int32Array(n + 1));
+  for (let i = 1; i <= m; i++)
+    for (let j = 1; j <= n; j++)
+      dp[i][j] = a[i-1] === b[j-1] ? dp[i-1][j-1] + 1 : Math.max(dp[i-1][j], dp[i][j-1]);
+  const pairs = [];
+  let i = m, j = n;
+  while (i > 0 && j > 0) {
+    if (a[i-1] === b[j-1]) { pairs.unshift([i-1, j-1]); i--; j--; }
+    else if (dp[i-1][j] >= dp[i][j-1]) i--;
+    else j--;
+  }
+  return pairs;
+}
+
+// Word-level diff: returns [oldHtml, newHtml] with changed words wrapped in <mark>
+function wordDiff(oldStr, newStr) {
+  const split = s => (s || '').match(/\S+/g) || [];
+  const ow = split(oldStr);
+  const nw = split(newStr);
+  const pairs = lcsIndices(ow.map(w => w.toLowerCase()), nw.map(w => w.toLowerCase()));
+  const oldMatch = new Set(pairs.map(p => p[0]));
+  const newMatch = new Set(pairs.map(p => p[1]));
+  const oldHtml = ow.map((w, i) =>
+    oldMatch.has(i) ? escapeHtml(w) : `<mark class="hl-old">${escapeHtml(w)}</mark>`
+  ).join(' ');
+  const newHtml = nw.map((w, i) =>
+    newMatch.has(i) ? escapeHtml(w) : `<mark class="hl-new">${escapeHtml(w)}</mark>`
+  ).join(' ');
+  return [oldHtml, newHtml];
 }
 
 function renderDiff(idx) {
@@ -290,8 +325,8 @@ function renderDiff(idx) {
   const rows = allKeys.map(k => {
     const ov = of[k] !== undefined ? of[k] : null;
     const sv = sf[k] !== undefined ? sf[k] : null;
-    const ovClean = cleanStr(ov || '');
-    const svClean = cleanStr(sv || '');
+    const ovClean = cleanStr(ov || '').toLowerCase();
+    const svClean = cleanStr(sv || '').toLowerCase();
     let rowClass;
     if (ov === null) {
       rowClass = 'row-added'; changedCount++;
@@ -321,10 +356,17 @@ function renderDiff(idx) {
     const tr = document.createElement('tr');
     tr.className = rowClass;
     const missingTxt = '<span style="color:#cbd5e1;font-style:italic">—</span>';
+    let oldHtml, newHtml;
+    if (rowClass === 'row-changed') {
+      [oldHtml, newHtml] = wordDiff(ov, sv);
+    } else {
+      oldHtml = ov !== null ? escapeHtml(ov) : missingTxt;
+      newHtml = sv !== null ? escapeHtml(sv) : missingTxt;
+    }
     tr.innerHTML =
       `<td class="td-field">${escapeHtml(k)}</td>` +
-      `<td class="td-old">${ov !== null ? escapeHtml(ov) : missingTxt}</td>` +
-      `<td class="td-new">${sv !== null ? escapeHtml(sv) : missingTxt}</td>`;
+      `<td class="td-old">${oldHtml}</td>` +
+      `<td class="td-new">${newHtml}</td>`;
     tbody.appendChild(tr);
   });
 
