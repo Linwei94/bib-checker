@@ -40,8 +40,8 @@ function setStep(stepNum, msg, btnLabel, btnClass, onBtn, extra) {
   banner.innerHTML = `
     <span id="bib-banner-msg"><span class="step">Step ${stepNum}/2</span>${msg}</span>
     ${extra || ''}
-    <button class="bib-btn ${btnClass || ''}" id="bib-next-btn">${btnLabel}</button>
-    <button class="bib-btn gray" id="bib-cancel-btn">✕ 取消</button>
+    <button class="bib-btn ${btnClass || ''}" id="bib-next-btn">${btnLabel} <span style="opacity:.7;font-size:11px">[Enter]</span></button>
+    <button class="bib-btn gray" id="bib-cancel-btn">✕ <span style="opacity:.7;font-size:11px">[Esc]</span></button>
   `;
   document.getElementById('bib-next-btn').onclick = onBtn;
   document.getElementById('bib-cancel-btn').onclick = closeBanner;
@@ -111,6 +111,18 @@ function doStep2() {
   bibEl.click();
   // BibTeX page will open — scholar-bib.js handles it
 }
+
+// ── Keyboard shortcut: Enter = next step, Esc = cancel ───────────
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    const btn = document.getElementById('bib-next-btn');
+    if (btn) { e.preventDefault(); btn.click(); }
+  }
+  if (e.key === 'Escape') {
+    const btn = document.getElementById('bib-cancel-btn');
+    if (btn) btn.click();
+  }
+}, true);
 
 // ── Start ─────────────────────────────────────────────────────────
 setTimeout(step1, 800);
