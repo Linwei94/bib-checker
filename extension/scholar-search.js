@@ -105,11 +105,72 @@ function waitForBibtexLink(attempts) {
   setStep(2, '已找到 <b>BibTeX</b> 链接（黄色高亮）', '▶ 点击 BibTeX', 'green', doStep2);
 }
 
-function doStep2() {
+async function doStep2() {
   bibEl.classList.remove('bib-highlight');
-  closeBanner();
-  bibEl.click();
-  // BibTeX page will open — scholar-bib.js handles it
+  setInfo('⏳ 正在获取 BibTeX…');
+
+  try {
+    const res = await fetch(bibEl.href);
+    const text = (await res.text()).trim();
+    if (!text.startsWith('@')) throw new Error('unexpected content');
+    showBibResult(text);
+  } catch(e) {
+    // Fallback: open the link if fetch fails
+    setInfo('⚠️ 无法直接获取，正在打开 BibTeX 页面…');
+    bibEl.click();
+  }
+}
+
+function showBibResult(bib) {
+  // Remove banner, show full-page overlay instead
+  banner.remove();
+  document.body.style.marginTop = '';
+
+  const overlay = document.createElement('div');
+  overlay.style.cssText = `
+    position:fixed; inset:0; z-index:99999; background:rgba(0,0,0,.55);
+    display:flex; align-items:center; justify-content:center; padding:24px;
+  `;
+
+  overlay.innerHTML = `
+    <div style="background:white;border-radius:12px;width:100%;max-width:640px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.4)">
+      <div style="background:#1e3a8a;color:white;padding:14px 18px;display:flex;align-items:center;gap:10px;flex-shrink:0">
+        <span style="font-size:15px;font-weight:700;flex:1">📋 BibTeX 已就绪</span>
+        <span style="opacity:.7;font-size:12px">[Enter] 复制 &nbsp; [Esc] 关闭</span>
+      </div>
+      <pre id="bib-result-text" style="flex:1;overflow-y:auto;margin:0;padding:16px;font-size:12.5px;line-height:1.7;white-space:pre-wrap;word-break:break-all;color:#1e293b;background:#f8fafc">${bib.replace(/</g,'&lt;')}</pre>
+      <div style="padding:12px 16px;background:#f0f9ff;border-top:1px solid #bfdbfe;display:flex;gap:10px;align-items:center;flex-shrink:0">
+        <span style="flex:1;font-size:12px;color:#6b7280">复制后切回 BibTeX Checker，按 Ctrl+V 粘贴</span>
+        <button id="bib-copy-btn" style="background:#059669;color:white;border:none;border-radius:6px;padding:8px 20px;font-size:13px;font-weight:700;cursor:pointer">复制 BibTeX</button>
+        <button id="bib-close-btn" style="background:#e5e7eb;color:#374151;border:none;border-radius:6px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer">关闭</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  const copyBtn = document.getElementById('bib-copy-btn');
+  const closeBtn = document.getElementById('bib-close-btn');
+
+  function doCopy() {
+    navigator.clipboard.writeText(bib).then(() => {
+      copyBtn.textContent = '✅ 已复制！';
+      setTimeout(() => { copyBtn.textContent = '复制 BibTeX'; }, 2000);
+    });
+    // Also try postMessage to opener
+    if (window.opener) {
+      try { window.opener.postMessage({ type: 'bib-checker-bib', bib }, '*'); } catch(e) {}
+    }
+  }
+
+  copyBtn.onclick = doCopy;
+  closeBtn.onclick = () => overlay.remove();
+
+  // Keyboard: Enter = copy, Esc = close
+  document.addEventListener('keydown', function handler(e) {
+    if (e.key === 'Enter') { e.preventDefault(); doCopy(); }
+    if (e.key === 'Escape') { overlay.remove(); document.removeEventListener('keydown', handler, true); }
+  }, true);
 }
 
 // ── Keyboard shortcut: Enter = next step, Esc = cancel ───────────
