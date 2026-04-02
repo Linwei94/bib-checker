@@ -17,7 +17,6 @@ body {
   color: #1f2937;
 }
 
-/* ── Header ─────────────────────────────────────────────── */
 header {
   background: linear-gradient(135deg, #1e40af, #3b82f6);
   color: white;
@@ -28,15 +27,24 @@ header {
   flex-shrink: 0;
   box-shadow: 0 2px 8px rgba(0,0,0,0.2);
 }
-header h1 { font-size: 1rem; font-weight: 700; letter-spacing: 0.01em; }
-.header-right { display: flex; align-items: center; gap: 12px; }
+header h1 { font-size: 1rem; font-weight: 700; }
+.header-right { display: flex; align-items: center; gap: 10px; }
 #stats { display: flex; gap: 6px; font-size: 12px; }
-#stats span {
-  background: rgba(255,255,255,0.18);
-  border-radius: 20px;
-  padding: 2px 10px;
-  font-weight: 500;
+#stats span { background: rgba(255,255,255,0.18); border-radius: 20px; padding: 2px 10px; font-weight: 500; }
+
+.btn-lang {
+  background: rgba(255,255,255,0.2);
+  color: white;
+  border: 1px solid rgba(255,255,255,0.4);
+  border-radius: 6px;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
 }
+.btn-lang:hover { background: rgba(255,255,255,0.3); }
+
 .btn-download {
   background: white;
   color: #1e40af;
@@ -46,178 +54,74 @@ header h1 { font-size: 1rem; font-weight: 700; letter-spacing: 0.01em; }
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.15s;
 }
 .btn-download:hover { background: #eff6ff; }
 
-/* ── Main layout ─────────────────────────────────────────── */
-.main {
-  display: flex;
-  flex: 1;
-  gap: 10px;
-  padding: 10px;
-  overflow: hidden;
-}
+.main { display: flex; flex: 1; gap: 10px; padding: 10px; overflow: hidden; }
 
-/* ── Left panel ──────────────────────────────────────────── */
-.left-panel {
-  display: flex;
-  flex-direction: column;
-  width: 42%;
-  gap: 7px;
-  flex-shrink: 0;
-}
-.panel-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
+.left-panel { display: flex; flex-direction: column; width: 42%; gap: 7px; flex-shrink: 0; }
+.panel-toolbar { display: flex; align-items: center; justify-content: space-between; }
 .panel-toolbar label { font-size: 13px; font-weight: 600; color: #374151; }
 .btn-parse {
-  background: #1e40af;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  padding: 5px 13px;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.15s;
+  background: #1e40af; color: white; border: none; border-radius: 5px;
+  padding: 5px 13px; font-size: 12px; font-weight: 600; cursor: pointer;
 }
 .btn-parse:hover { background: #1d4ed8; }
 
 #bib-textarea {
   flex: 1;
   font-family: 'Courier New', Courier, monospace;
-  font-size: 11.5px;
-  line-height: 1.55;
-  border: 1px solid #d1d5db;
-  border-radius: 7px;
-  padding: 10px;
-  resize: none;
-  outline: none;
-  background: #fff;
-  color: #111827;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  font-size: 11.5px; line-height: 1.55;
+  border: 1px solid #d1d5db; border-radius: 7px;
+  padding: 10px; resize: none; outline: none;
+  background: #fff; color: #111827;
 }
-#bib-textarea:focus {
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59,130,246,0.12);
-}
+#bib-textarea:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.12); }
 
-/* ── Right panel ─────────────────────────────────────────── */
-.right-panel {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  overflow: hidden;
-  min-width: 0;
-}
+.right-panel { flex: 1; display: flex; flex-direction: column; gap: 8px; overflow: hidden; min-width: 0; }
 
-/* Entry list */
 .entry-list-wrap {
-  background: white;
-  border: 1px solid #d1d5db;
-  border-radius: 7px;
-  overflow-y: auto;
-  max-height: 195px;
-  flex-shrink: 0;
+  background: white; border: 1px solid #d1d5db; border-radius: 7px;
+  overflow-y: auto; max-height: 195px; flex-shrink: 0;
 }
-.entry-placeholder {
-  color: #9ca3af;
-  font-size: 13px;
-  text-align: center;
-  padding: 18px;
-  font-style: italic;
-}
+.entry-placeholder { color: #9ca3af; font-size: 13px; text-align: center; padding: 18px; font-style: italic; }
 .entry-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 7px 12px;
-  border-bottom: 1px solid #f3f4f6;
-  cursor: pointer;
-  transition: background 0.1s;
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 12px; border-bottom: 1px solid #f3f4f6;
+  cursor: pointer; transition: background 0.1s;
 }
 .entry-item:last-child { border-bottom: none; }
 .entry-item:hover { background: #f9fafb; }
-.entry-item.active {
-  background: #eff6ff;
-  border-left: 3px solid #3b82f6;
-  padding-left: 9px;
+.entry-item.active { background: #eff6ff; border-left: 3px solid #3b82f6; padding-left: 9px; }
+.entry-badge {
+  font-size: 14px; flex-shrink: 0; width: 20px; text-align: center;
+  cursor: pointer; border-radius: 3px; padding: 1px;
+  transition: background 0.1s;
 }
-.entry-badge { font-size: 14px; flex-shrink: 0; width: 18px; text-align: center; }
-.entry-key {
-  font-family: monospace;
-  font-size: 11px;
-  color: #6b7280;
-  flex-shrink: 0;
-  width: 140px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.entry-title-small {
-  font-size: 12px;
-  color: #374151;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
+.entry-badge:hover { background: rgba(0,0,0,0.08); }
+.entry-badge[title] { cursor: pointer; }
+.entry-key { font-family: monospace; font-size: 11px; color: #6b7280; flex-shrink: 0; width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.entry-title-small { font-size: 12px; color: #374151; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-/* Checker panel */
 .checker-panel {
-  background: white;
-  border: 1px solid #d1d5db;
-  border-radius: 7px;
-  padding: 14px;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  overflow-y: auto;
+  background: white; border: 1px solid #d1d5db; border-radius: 7px;
+  padding: 14px; flex: 1; display: flex; flex-direction: column;
+  gap: 10px; overflow-y: auto;
 }
-.checker-placeholder {
-  color: #9ca3af;
-  font-size: 13px;
-  text-align: center;
-  padding: 30px 0;
-  font-style: italic;
-}
+.checker-placeholder { color: #9ca3af; font-size: 13px; text-align: center; padding: 30px 0; font-style: italic; }
 
 .entry-info {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
-  padding: 10px 12px;
-  font-size: 12.5px;
-  line-height: 1.65;
+  background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px;
+  padding: 10px 12px; font-size: 12.5px; line-height: 1.65;
 }
-.entry-info .info-title {
-  font-weight: 700;
-  color: #111827;
-  margin-bottom: 5px;
-  font-size: 13px;
-}
+.entry-info .info-title { font-weight: 700; color: #111827; margin-bottom: 5px; font-size: 13px; }
 .entry-info .info-row { color: #4b5563; }
-.entry-info code {
-  background: #e5e7eb;
-  border-radius: 3px;
-  padding: 1px 5px;
-  font-size: 11px;
-  color: #374151;
-}
+.entry-info code { background: #e5e7eb; border-radius: 3px; padding: 1px 5px; font-size: 11px; color: #374151; }
 
 .btn-row { display: flex; gap: 8px; }
 .btn {
-  flex: 1;
-  padding: 8px 10px;
-  border: none;
-  border-radius: 6px;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
+  flex: 1; padding: 8px 10px; border: none; border-radius: 6px;
+  font-size: 13px; font-weight: 600; cursor: pointer;
   transition: opacity 0.15s, transform 0.1s;
 }
 .btn:hover { opacity: 0.88; }
@@ -226,73 +130,119 @@ header h1 { font-size: 1rem; font-weight: 700; letter-spacing: 0.01em; }
 .btn-semantic { background: #7c3aed; color: white; }
 .btn-replace  { background: #059669; color: white; }
 .btn-keep     { background: #e5e7eb; color: #374151; }
-.btn-nav      { background: #f3f4f6; color: #374151; font-size: 12px; padding: 6px 10px; }
+.btn-nav      { background: #f3f4f6; color: #374151; font-size: 12px; padding: 6px 10px; flex: 0 0 auto; }
+.btn-undo     { background: #fef3c7; color: #92400e; font-size: 12px; padding: 6px 10px; flex: 0 0 auto; }
+.btn-undo:disabled { opacity: 0.35; cursor: not-allowed; }
+.btn-undo:disabled:hover { opacity: 0.35; }
 
 .field-label { font-size: 12px; font-weight: 600; color: #374151; display: block; margin-bottom: 4px; }
 
 #new-bib {
-  width: 100%;
-  font-family: 'Courier New', Courier, monospace;
-  font-size: 11.5px;
-  line-height: 1.5;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  padding: 8px 10px;
-  resize: vertical;
-  outline: none;
-  transition: border-color 0.15s;
-  min-height: 130px;
-  background: #fafafa;
+  width: 100%; font-family: 'Courier New', Courier, monospace;
+  font-size: 11.5px; line-height: 1.5;
+  border: 1px solid #d1d5db; border-radius: 6px;
+  padding: 8px 10px; resize: vertical; outline: none;
+  min-height: 130px; background: #fafafa;
 }
-#new-bib:focus {
-  border-color: #3b82f6;
+#new-bib:focus { border-color: #3b82f6; background: white; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+
+.keep-key-row { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #6b7280; }
+.keep-key-row code { background: #e5e7eb; border-radius: 3px; padding: 1px 5px; font-size: 11px; color: #374151; }
+
+.nav-row { display: flex; align-items: center; gap: 6px; }
+#progress-text { flex: 1; text-align: center; font-size: 12px; color: #9ca3af; font-weight: 500; }
+
+/* ── Search side panel (画中画) ─────────────────────────────────── */
+#search-panel {
+  position: fixed;
+  top: 0; right: -460px;
+  width: 450px; height: 100vh;
   background: white;
-  box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+  border-left: 2px solid #3b82f6;
+  box-shadow: -6px 0 24px rgba(0,0,0,0.18);
+  display: flex; flex-direction: column;
+  z-index: 1000;
+  transition: right 0.3s cubic-bezier(.4,0,.2,1);
 }
+#search-panel.open { right: 0; }
 
-.keep-key-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  color: #6b7280;
+.sp-header {
+  background: linear-gradient(135deg, #1e40af, #3b82f6);
+  color: white; padding: 8px 12px;
+  display: flex; align-items: center; gap: 8px; flex-shrink: 0;
 }
-.keep-key-row input[type=checkbox] { cursor: pointer; }
-.keep-key-row code {
-  background: #e5e7eb;
-  border-radius: 3px;
-  padding: 1px 5px;
-  font-size: 11px;
-  color: #374151;
+.sp-title { font-size: 13px; font-weight: 700; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sp-close {
+  background: rgba(255,255,255,0.2); border: none; color: white;
+  border-radius: 5px; padding: 4px 10px; font-size: 13px;
+  cursor: pointer; font-weight: 700; flex-shrink: 0;
 }
+.sp-close:hover { background: rgba(255,255,255,0.35); }
 
-.nav-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.sp-url-bar {
+  display: flex; align-items: center; gap: 6px;
+  padding: 8px 10px; background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0; flex-shrink: 0;
 }
-#progress-text {
-  flex: 1;
-  text-align: center;
-  font-size: 12px;
-  color: #9ca3af;
-  font-weight: 500;
+.sp-url-text {
+  flex: 1; font-size: 11px; color: #6b7280;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-family: monospace;
 }
+.sp-open-tab {
+  background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe;
+  border-radius: 4px; padding: 3px 9px; font-size: 11px;
+  font-weight: 600; cursor: pointer; white-space: nowrap; flex-shrink: 0;
+  text-decoration: none;
+}
+.sp-open-tab:hover { background: #dbeafe; }
+
+.sp-tabs {
+  display: flex; border-bottom: 1px solid #e2e8f0;
+  flex-shrink: 0; background: #f8fafc;
+}
+.sp-tab {
+  flex: 1; padding: 7px 10px; font-size: 12px; font-weight: 600;
+  border: none; background: none; cursor: pointer; color: #6b7280;
+  border-bottom: 2px solid transparent; transition: all 0.15s;
+}
+.sp-tab.active { color: #1e40af; border-bottom-color: #3b82f6; background: white; }
+.sp-tab:hover:not(.active) { background: #f0f0f0; }
+
+.sp-iframe-wrap { flex: 1; position: relative; overflow: hidden; }
+#search-iframe {
+  width: 100%; height: 100%; border: none;
+  background: white;
+}
+.sp-blocked {
+  position: absolute; inset: 0;
+  display: none; flex-direction: column;
+  align-items: center; justify-content: center; gap: 14px;
+  background: #f8fafc; padding: 20px; text-align: center;
+}
+.sp-blocked.show { display: flex; }
+.sp-blocked-icon { font-size: 36px; }
+.sp-blocked-msg { font-size: 13px; color: #6b7280; line-height: 1.6; }
+.sp-blocked-link {
+  display: inline-block; background: #4285f4; color: white;
+  padding: 8px 18px; border-radius: 6px; font-size: 13px;
+  font-weight: 600; text-decoration: none;
+}
+.sp-blocked-link:hover { background: #3367d6; }
+
+/* ── Overlay dim when panel open ──────────────────────────────── */
+#sp-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.2);
+  z-index: 999; display: none;
+}
+#sp-overlay.show { display: block; }
 
 .toast {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  background: #1e293b;
-  color: white;
-  padding: 9px 16px;
-  border-radius: 8px;
-  font-size: 13px;
-  opacity: 0;
-  transform: translateY(8px);
-  transition: all 0.2s;
-  pointer-events: none;
-  z-index: 999;
+  position: fixed; bottom: 20px; right: 20px;
+  background: #1e293b; color: white;
+  padding: 9px 16px; border-radius: 8px; font-size: 13px;
+  opacity: 0; transform: translateY(8px);
+  transition: all 0.2s; pointer-events: none; z-index: 1001;
 }
 .toast.show { opacity: 1; transform: translateY(0); }
 </style>
@@ -300,105 +250,221 @@ header h1 { font-size: 1rem; font-weight: 700; letter-spacing: 0.01em; }
 <body>
 
 <header>
-  <h1>📚 BibTeX Reference Checker</h1>
+  <h1 data-i18n="title">📚 BibTeX Reference Checker</h1>
   <div class="header-right">
     <div id="stats"></div>
-    <button class="btn-download" onclick="downloadBib()">⬇ Download .bib</button>
+    <button class="btn-lang" onclick="toggleLang()" id="lang-btn">中文</button>
+    <button class="btn-download" onclick="downloadBib()" data-i18n="download">⬇ Download .bib</button>
   </div>
 </header>
 
 <div class="main">
-
-  <!-- LEFT: bib editor -->
   <div class="left-panel">
     <div class="panel-toolbar">
-      <label>BibTeX Source</label>
-      <button class="btn-parse" onclick="parseAndRender()">Parse Entries →</button>
+      <label data-i18n="bib-source">BibTeX Source</label>
+      <button class="btn-parse" onclick="parseAndRender()" data-i18n="parse-btn">Parse Entries →</button>
     </div>
-    <textarea id="bib-textarea" spellcheck="false"
-      placeholder="Paste your .bib file content here, then click 'Parse Entries' →"></textarea>
+    <textarea id="bib-textarea" spellcheck="false" data-i18n-placeholder="bib-placeholder"></textarea>
   </div>
 
-  <!-- RIGHT: navigator + checker -->
   <div class="right-panel">
-
-    <!-- Entry list -->
     <div class="entry-list-wrap" id="entry-list-wrap">
-      <div class="entry-placeholder">Parse entries to begin</div>
+      <div class="entry-placeholder" data-i18n="list-placeholder">Parse entries to begin</div>
     </div>
 
-    <!-- Checker -->
     <div class="checker-panel" id="checker-panel">
-      <div class="checker-placeholder" id="checker-placeholder">
+      <div class="checker-placeholder" id="checker-placeholder" data-i18n="checker-placeholder">
         Select an entry from the list above to check it
       </div>
 
       <div id="active-checker" style="display:none; flex-direction:column; gap:10px; flex:1;">
-
         <div class="entry-info" id="entry-info"></div>
 
         <div class="btn-row">
-          <button class="btn btn-scholar" onclick="openScholar()">🔍 Google Scholar</button>
-          <button class="btn btn-semantic" onclick="openSemantic()">📖 Semantic Scholar</button>
+          <button class="btn btn-scholar"  onclick="openSearch('scholar')"  data-i18n="btn-scholar">🔍 Google Scholar</button>
+          <button class="btn btn-semantic" onclick="openSearch('semantic')" data-i18n="btn-semantic">📖 Semantic Scholar</button>
         </div>
 
         <div>
-          <label class="field-label" for="new-bib">Paste new BibTeX (Scholar → Cite → BibTeX):</label>
-          <textarea id="new-bib" rows="7"
-            placeholder="@inproceedings{key,&#10;  title={...},&#10;  author={...},&#10;  year={...},&#10;  booktitle={...}&#10;}"></textarea>
+          <label class="field-label" for="new-bib" data-i18n="new-bib-label">Paste new BibTeX (Scholar → Cite → BibTeX):</label>
+          <textarea id="new-bib" rows="7" data-i18n-placeholder="new-bib-placeholder"></textarea>
         </div>
 
         <div class="keep-key-row">
           <input type="checkbox" id="keep-key" checked>
-          <label for="keep-key">Keep original key: <code id="key-display"></code></label>
+          <label for="keep-key" data-i18n="keep-key-label">Keep original key:</label>
+          <code id="key-display"></code>
         </div>
 
         <div class="btn-row">
-          <button class="btn btn-replace" onclick="replaceEntry()">✅ Replace Entry</button>
-          <button class="btn btn-keep" onclick="keepOriginal()">👍 Keep Original</button>
+          <button class="btn btn-replace" onclick="replaceEntry()" data-i18n="btn-replace">✅ Replace Entry</button>
+          <button class="btn btn-keep"    onclick="keepOriginal()" data-i18n="btn-keep">👍 Keep Original</button>
         </div>
 
         <div class="nav-row">
-          <button class="btn btn-nav" onclick="navigate(-1)">← Prev</button>
+          <button class="btn btn-nav"  onclick="navigate(-1)" data-i18n="btn-prev">← Prev</button>
           <span id="progress-text">0 / 0</span>
-          <button class="btn btn-nav" onclick="navigate(1)">Next →</button>
+          <button class="btn btn-nav"  onclick="navigate(1)"  data-i18n="btn-next">Next →</button>
+          <button class="btn btn-undo" onclick="undoState()"  data-i18n="btn-undo" id="undo-btn" disabled>↩ Undo</button>
         </div>
-
       </div>
     </div>
+  </div>
+</div>
 
+<!-- Search side panel (画中画) -->
+<div id="sp-overlay" onclick="closeSearchPanel()"></div>
+<div id="search-panel">
+  <div class="sp-header">
+    <span class="sp-title" id="sp-title">Google Scholar</span>
+    <button class="sp-close" onclick="closeSearchPanel()">✕</button>
+  </div>
+  <div class="sp-url-bar">
+    <span class="sp-url-text" id="sp-url-text"></span>
+    <a class="sp-open-tab" id="sp-open-tab" href="#" target="_blank" data-i18n="sp-open-tab">↗ New Tab</a>
+  </div>
+  <div class="sp-tabs">
+    <button class="sp-tab active" id="sp-tab-scholar"  onclick="switchTab('scholar')"  data-i18n="btn-scholar">🔍 Google Scholar</button>
+    <button class="sp-tab"        id="sp-tab-semantic" onclick="switchTab('semantic')" data-i18n="btn-semantic">📖 Semantic Scholar</button>
+  </div>
+  <div class="sp-iframe-wrap">
+    <iframe id="search-iframe" src="" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-top-navigation"></iframe>
+    <div class="sp-blocked" id="sp-blocked">
+      <div class="sp-blocked-icon">🚧</div>
+      <div class="sp-blocked-msg" id="sp-blocked-msg"></div>
+      <a class="sp-blocked-link" id="sp-blocked-link" href="#" target="_blank" data-i18n="sp-open-new">Open in New Tab</a>
+    </div>
   </div>
 </div>
 
 <div class="toast" id="toast"></div>
 
 <script>
-// ──────────────────────────────────────────────────────────────────
-// State
-// ──────────────────────────────────────────────────────────────────
+// ── i18n ──────────────────────────────────────────────────────────
+const I18N = {
+  en: {
+    'title':              '📚 BibTeX Reference Checker',
+    'download':           '⬇ Download .bib',
+    'bib-source':         'BibTeX Source',
+    'parse-btn':          'Parse Entries →',
+    'bib-placeholder':    'Paste your .bib file content here, then click "Parse Entries" →',
+    'list-placeholder':   'Parse entries to begin',
+    'checker-placeholder':'Select an entry from the list above to check it',
+    'btn-scholar':        '🔍 Google Scholar',
+    'btn-semantic':       '📖 Semantic Scholar',
+    'new-bib-label':      'Paste new BibTeX (Scholar → Cite → BibTeX):',
+    'new-bib-placeholder':'@inproceedings{key,\n  title={...},\n  author={...},\n  year={...},\n  booktitle={...}\n}',
+    'keep-key-label':     'Keep original key:',
+    'btn-replace':        '✅ Replace Entry',
+    'btn-keep':           '👍 Keep Original',
+    'btn-prev':           '← Prev',
+    'btn-next':           'Next →',
+    'btn-undo':           '↩ Undo',
+    'sp-open-tab':        '↗ New Tab',
+    'sp-open-new':        'Open in New Tab',
+    'sp-blocked-scholar': 'Google Scholar blocks embedding.\nClick below to open in a new tab.',
+    'sp-blocked-semantic':'Semantic Scholar blocks embedding.\nClick below to open in a new tab.',
+    'badge-hint':         'Click to mark as checked / uncheck',
+    'toast-parsed':       n => `Parsed ${n} entries`,
+    'toast-no-content':   'Paste your .bib content first',
+    'toast-no-entries':   'No entries found — check your BibTeX format',
+    'toast-no-new-bib':   'Paste the new BibTeX first',
+    'toast-not-found':    k => `Could not find @${k}`,
+    'toast-replaced':     '✅ Entry replaced',
+    'toast-nothing':      'Nothing to download',
+    'toast-downloading':  'Downloading main.bib',
+    'toast-undo':         '↩ Undone',
+    'toast-no-undo':      'Nothing to undo',
+    'stats-pending':      n => `⏳ ${n} pending`,
+    'stats-ok':           n => `✅ ${n} ok`,
+    'stats-replaced':     n => `🔄 ${n} replaced`,
+    'lang-btn':           '中文',
+  },
+  zh: {
+    'title':              '📚 BibTeX 参考文献核查工具',
+    'download':           '⬇ 下载 .bib',
+    'bib-source':         'BibTeX 内容',
+    'parse-btn':          '解析条目 →',
+    'bib-placeholder':    '将 .bib 文件内容粘贴到此处，然后点击"解析条目"→',
+    'list-placeholder':   '解析条目后开始核查',
+    'checker-placeholder':'从上方列表选择一条参考文献进行核查',
+    'btn-scholar':        '🔍 Google 学术',
+    'btn-semantic':       '📖 Semantic Scholar',
+    'new-bib-label':      '粘贴新 BibTeX（学术 → 引用 → BibTeX）：',
+    'new-bib-placeholder':'@inproceedings{key,\n  title={...},\n  author={...},\n  year={...},\n  booktitle={...}\n}',
+    'keep-key-label':     '保留原始 key：',
+    'btn-replace':        '✅ 替换条目',
+    'btn-keep':           '👍 保持不变',
+    'btn-prev':           '← 上一条',
+    'btn-next':           '下一条 →',
+    'btn-undo':           '↩ 撤销',
+    'sp-open-tab':        '↗ 新标签页',
+    'sp-open-new':        '在新标签页打开',
+    'sp-blocked-scholar': 'Google 学术禁止嵌入显示。\n请点击下方在新标签页中打开。',
+    'sp-blocked-semantic':'Semantic Scholar 禁止嵌入显示。\n请点击下方在新标签页中打开。',
+    'badge-hint':         '点击标记为已核查 / 取消标记',
+    'toast-parsed':       n => `已解析 ${n} 条参考文献`,
+    'toast-no-content':   '请先粘贴 .bib 内容',
+    'toast-no-entries':   '未找到条目，请检查 BibTeX 格式',
+    'toast-no-new-bib':   '请先粘贴新的 BibTeX',
+    'toast-not-found':    k => `找不到 @${k}`,
+    'toast-replaced':     '✅ 条目已替换',
+    'toast-nothing':      '没有内容可下载',
+    'toast-downloading':  '正在下载 main.bib',
+    'toast-undo':         '↩ 已撤销',
+    'toast-no-undo':      '没有可撤销的操作',
+    'stats-pending':      n => `⏳ ${n} 待检查`,
+    'stats-ok':           n => `✅ ${n} 已确认`,
+    'stats-replaced':     n => `🔄 ${n} 已替换`,
+    'lang-btn':           'English',
+  }
+};
+
+let lang = 'en';
+
+function t(key, ...args) {
+  const v = I18N[lang][key];
+  return typeof v === 'function' ? v(...args) : (v || key);
+}
+
+function applyLang() {
+  document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    el.textContent = t(el.dataset.i18n);
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    el.placeholder = t(el.dataset.i18nPlaceholder);
+  });
+  if (entries.length === 0) {
+    const lp = document.querySelector('#entry-list-wrap .entry-placeholder');
+    if (lp) lp.textContent = t('list-placeholder');
+  }
+  updateStats();
+  updateUndoBtn();
+}
+
+function toggleLang() {
+  lang = lang === 'en' ? 'zh' : 'en';
+  applyLang();
+  if (entries.length > 0) renderEntryList();
+}
+
+// ── State ─────────────────────────────────────────────────────────
 let entries = [];
 let currentIdx = -1;
+let undoHistory = [];   // [{text, statuses}]
 
-// ──────────────────────────────────────────────────────────────────
-// BibTeX parser  (brace-depth scanner)
-// ──────────────────────────────────────────────────────────────────
+// ── BibTeX parser ─────────────────────────────────────────────────
 function parseBib(text) {
   const results = [];
   let i = 0;
-
   while (i < text.length) {
-    // Find next @
     const at = text.indexOf('@', i);
     if (at === -1) break;
-
-    // Read entry type
     let j = at + 1;
     while (j < text.length && /\w/.test(text[j])) j++;
     const type = text.slice(at + 1, j).trim().toLowerCase();
-
-    // Skip @string, @preamble, @comment
     if (!type || type === 'string' || type === 'preamble' || type === 'comment') {
-      // find and skip matching braces/parens
       const ob = text.indexOf('{', j);
       if (ob === -1) break;
       let d = 0, k = ob;
@@ -406,15 +472,10 @@ function parseBib(text) {
         if (text[k] === '{') d++;
         else if (text[k] === '}') { d--; if (d === 0) { k++; break; } }
       }
-      i = k;
-      continue;
+      i = k; continue;
     }
-
-    // Find opening brace
     const ob = text.indexOf('{', j);
     if (ob === -1) break;
-
-    // Find matching closing brace (skip quoted strings)
     let depth = 0, k = ob, inQuote = false;
     for (; k < text.length; k++) {
       const ch = text[k];
@@ -424,32 +485,20 @@ function parseBib(text) {
         else if (ch === '}') { depth--; if (depth === 0) { k++; break; } }
       }
     }
-
     const raw = text.slice(at, k);
-
-    // Extract key
     const comma = raw.indexOf(',');
     if (comma === -1) { i = k; continue; }
     const key = raw.slice(raw.indexOf('{') + 1, comma).trim();
     if (!key || /\s/.test(key)) { i = k; continue; }
-
-    // Extract fields
     const f = extractFields(raw);
-
     results.push({
-      key,
-      type,
-      raw,
-      start: at,
-      end: k,
+      key, type, raw, start: at, end: k,
       title:   cleanStr(f.title   || '(no title)'),
       authors: cleanStr(f.author  || ''),
       year:    (f.year || '').replace(/[{}]/g, '').trim(),
       venue:   cleanStr(f.journal || f.booktitle || f.howpublished || ''),
-      url:     cleanStr(f.url     || f.doi || ''),
       status: 'pending',
     });
-
     i = k;
   }
   return results;
@@ -457,17 +506,14 @@ function parseBib(text) {
 
 function extractFields(raw) {
   const fields = {};
-  // Find each "fieldname = value" pair
   const re = /\b([a-zA-Z]\w*)\s*=\s*/g;
   let m;
   while ((m = re.exec(raw)) !== null) {
     const name = m[1].toLowerCase();
-    if (name === raw.slice(raw.indexOf('{') + 1, raw.indexOf(',')).trim().toLowerCase()) continue;
     const pos = m.index + m[0].length;
     const ch = raw[pos];
     let val = '';
     if (ch === '{') {
-      // find matching }
       let d = 0, j = pos;
       for (; j < raw.length; j++) {
         if (raw[j] === '{') d++;
@@ -478,7 +524,6 @@ function extractFields(raw) {
       const end = raw.indexOf('"', pos + 1);
       val = end === -1 ? '' : raw.slice(pos + 1, end);
     } else {
-      // bare number or word until , or }
       const end = raw.slice(pos).search(/[,}\s]/);
       val = end === -1 ? raw.slice(pos) : raw.slice(pos, pos + end);
     }
@@ -489,39 +534,40 @@ function extractFields(raw) {
 
 function cleanStr(s) {
   if (!s) return '';
-  return s.replace(/\{\\['"` ^~cduHkrtvb]\s*\{?([a-zA-Z])\}?\}/g, '$1')  // LaTeX accents
+  return s.replace(/\{\\['"` ^~cduHkrtvb]\s*\{?([a-zA-Z])\}?\}/g, '$1')
           .replace(/\\[a-zA-Z]+\s*/g, '')
           .replace(/[{}\\"]/g, '')
-          .replace(/\s+/g, ' ')
-          .trim();
+          .replace(/\s+/g, ' ').trim();
 }
 
-// ──────────────────────────────────────────────────────────────────
-// Status preservation after re-parse
-// ──────────────────────────────────────────────────────────────────
+// ── Parse & render ────────────────────────────────────────────────
 function reparsePreservingStatus() {
-  const statusMap = {};
-  entries.forEach(e => { statusMap[e.key] = e.status; });
+  const sm = {};
+  entries.forEach(e => { sm[e.key] = e.status; });
   entries = parseBib(document.getElementById('bib-textarea').value);
-  entries.forEach(e => { if (statusMap[e.key]) e.status = statusMap[e.key]; });
+  entries.forEach(e => { if (sm[e.key]) e.status = sm[e.key]; });
 }
 
-// ──────────────────────────────────────────────────────────────────
-// Parse & render
-// ──────────────────────────────────────────────────────────────────
 function parseAndRender() {
   const text = document.getElementById('bib-textarea').value;
-  if (!text.trim()) { showToast('Paste your .bib content first'); return; }
+  if (!text.trim()) { showToast(t('toast-no-content')); return; }
   entries = parseBib(text);
-  if (entries.length === 0) { showToast('No entries found — check your BibTeX format'); return; }
+  if (entries.length === 0) { showToast(t('toast-no-entries')); return; }
+  undoHistory = [];
+  updateUndoBtn();
   renderEntryList();
   selectEntry(0);
-  showToast(`Parsed ${entries.length} entries`);
+  showToast(t('toast-parsed', entries.length));
 }
 
 function renderEntryList() {
   const wrap = document.getElementById('entry-list-wrap');
   wrap.innerHTML = '';
+  if (entries.length === 0) {
+    wrap.innerHTML = `<div class="entry-placeholder">${t('list-placeholder')}</div>`;
+    return;
+  }
+  const hint = t('badge-hint');
   entries.forEach((e, i) => {
     const div = document.createElement('div');
     div.className = 'entry-item' + (i === currentIdx ? ' active' : '');
@@ -529,7 +575,7 @@ function renderEntryList() {
     div.onclick = () => selectEntry(i);
     const badge = e.status === 'ok' ? '✅' : e.status === 'replaced' ? '🔄' : '⏳';
     div.innerHTML =
-      `<span class="entry-badge">${badge}</span>` +
+      `<span class="entry-badge" title="${hint}" data-idx="${i}" onclick="toggleStatus(${i},event)">${badge}</span>` +
       `<span class="entry-key" title="${e.key}">${e.key}</span>` +
       `<span class="entry-title-small" title="${e.title}">${e.title}</span>`;
     wrap.appendChild(div);
@@ -537,124 +583,210 @@ function renderEntryList() {
   updateStats();
 }
 
-// ──────────────────────────────────────────────────────────────────
-// Select & display entry
-// ──────────────────────────────────────────────────────────────────
+// ── Toggle status by clicking badge ──────────────────────────────
+function toggleStatus(idx, event) {
+  event.stopPropagation();
+  pushHistory();
+  const e = entries[idx];
+  if (e.status === 'pending') {
+    e.status = 'ok';
+  } else if (e.status === 'ok') {
+    e.status = 'pending';
+  }
+  // 'replaced' stays replaced (don't toggle)
+  renderEntryList();
+  updateStats();
+}
+
+// ── Select entry ──────────────────────────────────────────────────
 function selectEntry(idx) {
   if (idx < 0 || idx >= entries.length) return;
   currentIdx = idx;
   const e = entries[idx];
 
-  // Update list highlight
   document.querySelectorAll('.entry-item').forEach((el, i) => {
     el.classList.toggle('active', i === idx);
     if (i === idx) el.scrollIntoView({ block: 'nearest' });
   });
 
-  // Highlight in bib textarea
   highlightInBib(e);
 
-  // Show checker
   document.getElementById('checker-placeholder').style.display = 'none';
   const ac = document.getElementById('active-checker');
   ac.style.display = 'flex';
 
-  // Fill entry info
   const authShort = e.authors.length > 100 ? e.authors.slice(0, 100) + '…' : e.authors;
   document.getElementById('entry-info').innerHTML =
-    `<div class="info-title">${e.title || '(no title)'}</div>` +
+    `<div class="info-title">${e.title}</div>` +
     `<div class="info-row">` +
-    (e.authors ? `<b>Authors:</b> ${authShort}<br>` : '') +
-    (e.year    ? `<b>Year:</b> ${e.year}` : '') +
+    (e.authors ? `<b>${lang==='zh'?'作者':'Authors'}:</b> ${authShort}<br>` : '') +
+    (e.year    ? `<b>${lang==='zh'?'年份':'Year'}:</b> ${e.year}` : '') +
     (e.year && e.venue ? ' &nbsp;·&nbsp; ' : '') +
-    (e.venue   ? `<b>Venue:</b> ${e.venue.slice(0, 80)}` : '') +
+    (e.venue   ? `<b>${lang==='zh'?'来源':'Venue'}:</b> ${e.venue.slice(0,80)}` : '') +
     `<br><b>Type:</b> @${e.type} &nbsp; <b>Key:</b> <code>${e.key}</code>` +
     `</div>`;
 
   document.getElementById('key-display').textContent = e.key;
   document.getElementById('new-bib').value = '';
   document.getElementById('progress-text').textContent = `${idx + 1} / ${entries.length}`;
-
   updateStats();
 }
 
 function highlightInBib(entry) {
   const ta = document.getElementById('bib-textarea');
   const text = ta.value;
-
-  // Re-find position by key (in case text was edited)
   const re = new RegExp('@\\w+\\s*\\{\\s*' + escapeRe(entry.key) + '\\s*,', 'i');
   const m = re.exec(text);
   if (!m) return;
-
   let depth = 0, i = m.index;
   for (; i < text.length; i++) {
     if (text[i] === '{') depth++;
     else if (text[i] === '}') { depth--; if (depth === 0) { i++; break; } }
   }
-
   ta.focus();
   ta.setSelectionRange(m.index, i);
-
-  // Scroll to selection
   const lines = text.slice(0, m.index).split('\n').length;
   const lineH = parseFloat(getComputedStyle(ta).lineHeight) || 17;
   ta.scrollTop = Math.max(0, (lines - 3) * lineH);
 }
 
-// ──────────────────────────────────────────────────────────────────
-// Scholar buttons
-// ──────────────────────────────────────────────────────────────────
-function openScholar() {
-  if (currentIdx < 0) return;
-  const q = encodeURIComponent(entries[currentIdx].title);
-  window.open(`https://scholar.google.com/scholar?q=${q}`, '_blank');
+// ── Undo ──────────────────────────────────────────────────────────
+function pushHistory() {
+  undoHistory.push({
+    text: document.getElementById('bib-textarea').value,
+    statuses: entries.map(e => ({ key: e.key, status: e.status })),
+    idx: currentIdx,
+  });
+  if (undoHistory.length > 30) undoHistory.shift();
+  updateUndoBtn();
 }
 
-function openSemantic() {
-  if (currentIdx < 0) return;
-  const q = encodeURIComponent(entries[currentIdx].title);
-  window.open(`https://www.semanticscholar.org/search?q=${q}&sort=Relevance`, '_blank');
+function undoState() {
+  if (!undoHistory.length) { showToast(t('toast-no-undo')); return; }
+  const s = undoHistory.pop();
+  document.getElementById('bib-textarea').value = s.text;
+  reparsePreservingStatus();
+  s.statuses.forEach(({ key, status }) => {
+    const e = entries.find(x => x.key === key);
+    if (e) e.status = status;
+  });
+  renderEntryList();
+  selectEntry(s.idx >= 0 && s.idx < entries.length ? s.idx : currentIdx);
+  updateUndoBtn();
+  showToast(t('toast-undo'));
 }
 
-// ──────────────────────────────────────────────────────────────────
-// Replace entry
-// ──────────────────────────────────────────────────────────────────
+function updateUndoBtn() {
+  const btn = document.getElementById('undo-btn');
+  if (!btn) return;
+  btn.disabled = undoHistory.length === 0;
+  btn.textContent = t('btn-undo') + (undoHistory.length > 0 ? ` (${undoHistory.length})` : '');
+}
+
+// ── Search side panel (画中画) ────────────────────────────────────
+let currentSearchTab = 'scholar';
+
+function getSearchUrl(service) {
+  if (currentIdx < 0) return '';
+  const q = encodeURIComponent(entries[currentIdx].title);
+  return service === 'scholar'
+    ? `https://scholar.google.com/scholar?q=${q}`
+    : `https://www.semanticscholar.org/search?q=${q}&sort=Relevance`;
+}
+
+function openSearch(service) {
+  if (currentIdx < 0) return;
+  currentSearchTab = service;
+  document.getElementById('sp-tab-scholar').classList.toggle('active',  service === 'scholar');
+  document.getElementById('sp-tab-semantic').classList.toggle('active', service === 'semantic');
+  loadSearchPanel(service);
+  document.getElementById('search-panel').classList.add('open');
+  document.getElementById('sp-overlay').classList.add('show');
+}
+
+function switchTab(service) {
+  if (currentIdx < 0) return;
+  currentSearchTab = service;
+  document.getElementById('sp-tab-scholar').classList.toggle('active',  service === 'scholar');
+  document.getElementById('sp-tab-semantic').classList.toggle('active', service === 'semantic');
+  loadSearchPanel(service);
+}
+
+function loadSearchPanel(service) {
+  const url = getSearchUrl(service);
+  const title = service === 'scholar' ? t('btn-scholar') : t('btn-semantic');
+
+  document.getElementById('sp-title').textContent = title;
+  document.getElementById('sp-url-text').textContent = url;
+  document.getElementById('sp-open-tab').href = url;
+  document.getElementById('sp-blocked-link').href = url;
+
+  // Show blocked overlay immediately (Scholar/SS block iframes)
+  // and let the iframe try anyway; if it loads, hide the overlay.
+  const blocked = document.getElementById('sp-blocked');
+  const iframe  = document.getElementById('search-iframe');
+
+  const blockedMsg = service === 'scholar' ? t('sp-blocked-scholar') : t('sp-blocked-semantic');
+  document.getElementById('sp-blocked-msg').textContent = blockedMsg;
+
+  // Reset iframe first
+  iframe.src = '';
+  blocked.classList.remove('show');
+
+  // Delay slightly then load — if it fails (X-Frame-Options), show fallback
+  let loadTimer = setTimeout(() => { blocked.classList.add('show'); }, 2500);
+
+  iframe.onload = function() {
+    clearTimeout(loadTimer);
+    try {
+      // Try to access contentDocument — throws if cross-origin blocked
+      const doc = iframe.contentDocument || iframe.contentWindow.document;
+      if (!doc || doc.URL === 'about:blank') {
+        blocked.classList.add('show');
+      } else {
+        blocked.classList.remove('show');
+      }
+    } catch(e) {
+      blocked.classList.add('show');
+    }
+  };
+
+  iframe.src = url;
+}
+
+function closeSearchPanel() {
+  document.getElementById('search-panel').classList.remove('open');
+  document.getElementById('sp-overlay').classList.remove('show');
+  // Clear iframe to stop loading
+  setTimeout(() => { document.getElementById('search-iframe').src = ''; }, 350);
+}
+
+// ── Actions ───────────────────────────────────────────────────────
 function replaceEntry() {
   if (currentIdx < 0) return;
   let newBib = document.getElementById('new-bib').value.trim();
-  if (!newBib) { showToast('Paste the new BibTeX first'); return; }
-
+  if (!newBib) { showToast(t('toast-no-new-bib')); return; }
   const e = entries[currentIdx];
-
-  // Keep original key if checkbox checked
   if (document.getElementById('keep-key').checked) {
     newBib = newBib.replace(/^(@\w+\s*\{\s*)[\w:._\-]+/, `$1${e.key}`);
   }
-
-  // Find entry in text and replace
   const ta = document.getElementById('bib-textarea');
   const text = ta.value;
   const re = new RegExp('@\\w+\\s*\\{\\s*' + escapeRe(e.key) + '\\s*,', 'i');
   const m = re.exec(text);
-  if (!m) { showToast(`Could not find @${e.key}`); return; }
-
+  if (!m) { showToast(t('toast-not-found', e.key)); return; }
+  pushHistory();
   let depth = 0, i = m.index;
   for (; i < text.length; i++) {
     if (text[i] === '{') depth++;
     else if (text[i] === '}') { depth--; if (depth === 0) { i++; break; } }
   }
-
   ta.value = text.slice(0, m.index) + newBib + text.slice(i);
-
-  // Re-parse preserving statuses
   reparsePreservingStatus();
-  entries[currentIdx] = entries.find(x => x.key === e.key) || entries[currentIdx];
   const newIdx = entries.findIndex(x => x.key === e.key);
-  if (newIdx !== -1) entries[newIdx].status = 'replaced';
-
+  if (newIdx !== -1) { entries[newIdx].status = 'replaced'; currentIdx = newIdx; }
   renderEntryList();
-  showToast('✅ Entry replaced');
+  showToast(t('toast-replaced'));
   setTimeout(() => {
     const ni = findNextPending(newIdx !== -1 ? newIdx : currentIdx);
     selectEntry(ni !== -1 ? ni : currentIdx);
@@ -663,6 +795,7 @@ function replaceEntry() {
 
 function keepOriginal() {
   if (currentIdx < 0) return;
+  pushHistory();
   entries[currentIdx].status = 'ok';
   renderEntryList();
   const next = findNextPending(currentIdx);
@@ -673,7 +806,6 @@ function findNextPending(from) {
   for (let i = from + 1; i < entries.length; i++) {
     if (entries[i].status === 'pending') return i;
   }
-  // wrap around
   for (let i = 0; i <= from; i++) {
     if (entries[i].status === 'pending') return i;
   }
@@ -685,54 +817,48 @@ function navigate(dir) {
   if (next >= 0 && next < entries.length) selectEntry(next);
 }
 
-// ──────────────────────────────────────────────────────────────────
-// Stats & download
-// ──────────────────────────────────────────────────────────────────
 function updateStats() {
   if (entries.length === 0) { document.getElementById('stats').innerHTML = ''; return; }
   const pending  = entries.filter(e => e.status === 'pending').length;
   const ok       = entries.filter(e => e.status === 'ok').length;
   const replaced = entries.filter(e => e.status === 'replaced').length;
   document.getElementById('stats').innerHTML =
-    `<span>⏳ ${pending} pending</span>` +
-    `<span>✅ ${ok} ok</span>` +
-    `<span>🔄 ${replaced} replaced</span>`;
+    `<span>${t('stats-pending', pending)}</span>` +
+    `<span>${t('stats-ok', ok)}</span>` +
+    `<span>${t('stats-replaced', replaced)}</span>`;
 }
 
 function downloadBib() {
   const text = document.getElementById('bib-textarea').value;
-  if (!text.trim()) { showToast('Nothing to download'); return; }
+  if (!text.trim()) { showToast(t('toast-nothing')); return; }
   const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = 'main.bib';
   a.click();
-  showToast('Downloading main.bib');
+  showToast(t('toast-downloading'));
 }
 
-// ──────────────────────────────────────────────────────────────────
-// Utilities
-// ──────────────────────────────────────────────────────────────────
-function escapeRe(s) {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
+function escapeRe(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
 
 function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  clearTimeout(t._timer);
-  t._timer = setTimeout(() => t.classList.remove('show'), 2200);
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(el._timer);
+  el._timer = setTimeout(() => el.classList.remove('show'), 2200);
 }
 
-// Keyboard shortcuts
 document.addEventListener('keydown', e => {
   if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
+  if (e.key === 'Escape') { closeSearchPanel(); return; }
   if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); navigate(1); }
   if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   { e.preventDefault(); navigate(-1); }
-  if (e.key === 'Enter' && e.metaKey) replaceEntry();
-  if (e.key === 'k' && e.metaKey) keepOriginal();
+  if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undoState(); }
 });
+
+// Init
+applyLang();
 </script>
 </body>
 </html>
