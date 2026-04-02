@@ -152,11 +152,11 @@ header h1 { font-size: 1rem; font-weight: 700; }
 .nav-row { display: flex; align-items: center; gap: 6px; }
 #progress-text { flex: 1; text-align: center; font-size: 12px; color: #9ca3af; font-weight: 500; }
 
-/* ── Search side panel (画中画) ─────────────────────────────────── */
+/* ── Search side panel (画中画 launcher) ─────────────────────── */
 #search-panel {
   position: fixed;
-  top: 0; right: -460px;
-  width: 450px; height: 100vh;
+  top: 0; right: -380px;
+  width: 360px; height: 100vh;
   background: white;
   border-left: 2px solid #3b82f6;
   box-shadow: -6px 0 24px rgba(0,0,0,0.18);
@@ -168,10 +168,10 @@ header h1 { font-size: 1rem; font-weight: 700; }
 
 .sp-header {
   background: linear-gradient(135deg, #1e40af, #3b82f6);
-  color: white; padding: 8px 12px;
+  color: white; padding: 9px 13px;
   display: flex; align-items: center; gap: 8px; flex-shrink: 0;
 }
-.sp-title { font-size: 13px; font-weight: 700; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sp-header-title { font-size: 13px; font-weight: 700; flex: 1; }
 .sp-close {
   background: rgba(255,255,255,0.2); border: none; color: white;
   border-radius: 5px; padding: 4px 10px; font-size: 13px;
@@ -179,60 +179,74 @@ header h1 { font-size: 1rem; font-weight: 700; }
 }
 .sp-close:hover { background: rgba(255,255,255,0.35); }
 
-.sp-url-bar {
-  display: flex; align-items: center; gap: 6px;
-  padding: 8px 10px; background: #f8fafc;
-  border-bottom: 1px solid #e2e8f0; flex-shrink: 0;
-}
-.sp-url-text {
-  flex: 1; font-size: 11px; color: #6b7280;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  font-family: monospace;
-}
-.sp-open-tab {
-  background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe;
-  border-radius: 4px; padding: 3px 9px; font-size: 11px;
-  font-weight: 600; cursor: pointer; white-space: nowrap; flex-shrink: 0;
-  text-decoration: none;
-}
-.sp-open-tab:hover { background: #dbeafe; }
-
 .sp-tabs {
   display: flex; border-bottom: 1px solid #e2e8f0;
   flex-shrink: 0; background: #f8fafc;
 }
 .sp-tab {
-  flex: 1; padding: 7px 10px; font-size: 12px; font-weight: 600;
+  flex: 1; padding: 7px 8px; font-size: 12px; font-weight: 600;
   border: none; background: none; cursor: pointer; color: #6b7280;
   border-bottom: 2px solid transparent; transition: all 0.15s;
 }
 .sp-tab.active { color: #1e40af; border-bottom-color: #3b82f6; background: white; }
 .sp-tab:hover:not(.active) { background: #f0f0f0; }
 
-.sp-iframe-wrap { flex: 1; position: relative; overflow: hidden; }
-#search-iframe {
-  width: 100%; height: 100%; border: none;
-  background: white;
+.sp-body {
+  flex: 1; padding: 16px 14px; display: flex; flex-direction: column;
+  gap: 14px; overflow-y: auto;
 }
-.sp-blocked {
-  position: absolute; inset: 0;
-  display: none; flex-direction: column;
-  align-items: center; justify-content: center; gap: 14px;
-  background: #f8fafc; padding: 20px; text-align: center;
+
+.sp-paper-box {
+  background: #f0f7ff; border: 1px solid #bfdbfe; border-radius: 7px;
+  padding: 10px 12px;
 }
-.sp-blocked.show { display: flex; }
-.sp-blocked-icon { font-size: 36px; }
-.sp-blocked-msg { font-size: 13px; color: #6b7280; line-height: 1.6; }
-.sp-blocked-link {
-  display: inline-block; background: #4285f4; color: white;
-  padding: 8px 18px; border-radius: 6px; font-size: 13px;
-  font-weight: 600; text-decoration: none;
+.sp-paper-label { font-size: 10px; font-weight: 700; color: #3b82f6; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 4px; }
+.sp-paper-title { font-size: 12.5px; font-weight: 600; color: #1e3a5f; line-height: 1.5; }
+
+.sp-side-btn {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; padding: 11px 14px; border: none; border-radius: 8px;
+  font-size: 14px; font-weight: 700; cursor: pointer; text-decoration: none;
+  transition: opacity 0.15s, transform 0.1s;
 }
-.sp-blocked-link:hover { background: #3367d6; }
+.sp-side-btn:hover { opacity: 0.88; }
+.sp-side-btn:active { transform: scale(0.98); }
+.sp-side-scholar  { background: #4285f4; color: white; }
+.sp-side-semantic { background: #7c3aed; color: white; }
+
+.sp-side-hint {
+  font-size: 11px; color: #9ca3af; text-align: center; margin-top: -8px; line-height: 1.5;
+}
+
+.sp-divider { border: none; border-top: 1px solid #f0f0f0; margin: 0; }
+
+.sp-steps-title { font-size: 11px; font-weight: 700; color: #374151; text-transform: uppercase; letter-spacing: .05em; }
+.sp-steps { display: flex; flex-direction: column; gap: 6px; }
+.sp-step {
+  display: flex; align-items: flex-start; gap: 8px; font-size: 12px; color: #4b5563; line-height: 1.5;
+}
+.sp-step-num {
+  background: #3b82f6; color: white; border-radius: 50%;
+  width: 18px; height: 18px; font-size: 10px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px;
+}
+
+.sp-url-row { display: flex; gap: 6px; align-items: center; }
+.sp-url-display {
+  flex: 1; font-family: monospace; font-size: 10.5px; color: #6b7280;
+  background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 5px;
+  padding: 4px 7px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.sp-copy-btn {
+  background: #f3f4f6; color: #374151; border: 1px solid #d1d5db;
+  border-radius: 5px; padding: 4px 9px; font-size: 11px; font-weight: 600;
+  cursor: pointer; white-space: nowrap; flex-shrink: 0;
+}
+.sp-copy-btn:hover { background: #e5e7eb; }
 
 /* ── Overlay dim when panel open ──────────────────────────────── */
 #sp-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.2);
+  position: fixed; inset: 0; background: rgba(0,0,0,0.15);
   z-index: 999; display: none;
 }
 #sp-overlay.show { display: block; }
@@ -333,27 +347,41 @@ header h1 { font-size: 1rem; font-weight: 700; }
   </div>
 </div>
 
-<!-- Search side panel (画中画) -->
+<!-- Search side panel (画中画 launcher) -->
 <div id="sp-overlay" onclick="closeSearchPanel()"></div>
 <div id="search-panel">
   <div class="sp-header">
-    <span class="sp-title" id="sp-title">Google Scholar</span>
+    <span class="sp-header-title" data-i18n="sp-panel-title">🔍 Search Reference</span>
     <button class="sp-close" onclick="closeSearchPanel()">✕</button>
-  </div>
-  <div class="sp-url-bar">
-    <span class="sp-url-text" id="sp-url-text"></span>
-    <a class="sp-open-tab" id="sp-open-tab" href="#" target="_blank" data-i18n="sp-open-tab">↗ New Tab</a>
   </div>
   <div class="sp-tabs">
     <button class="sp-tab active" id="sp-tab-scholar"  onclick="switchTab('scholar')"  data-i18n="btn-scholar">🔍 Google Scholar</button>
     <button class="sp-tab"        id="sp-tab-semantic" onclick="switchTab('semantic')" data-i18n="btn-semantic">📖 Semantic Scholar</button>
   </div>
-  <div class="sp-iframe-wrap">
-    <iframe id="search-iframe" src="" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-top-navigation"></iframe>
-    <div class="sp-blocked" id="sp-blocked">
-      <div class="sp-blocked-icon">🚧</div>
-      <div class="sp-blocked-msg" id="sp-blocked-msg"></div>
-      <a class="sp-blocked-link" id="sp-blocked-link" href="#" target="_blank" data-i18n="sp-open-new">Open in New Tab</a>
+  <div class="sp-body">
+    <div class="sp-paper-box">
+      <div class="sp-paper-label" data-i18n="sp-searching">Searching for</div>
+      <div class="sp-paper-title" id="sp-paper-title"></div>
+    </div>
+
+    <button class="sp-side-btn sp-side-scholar" id="sp-side-scholar-btn" onclick="openSideWindow('scholar')" data-i18n="sp-open-scholar">
+      🔍 Open Google Scholar
+    </button>
+    <button class="sp-side-btn sp-side-semantic" id="sp-side-semantic-btn" onclick="openSideWindow('semantic')" style="display:none" data-i18n="sp-open-semantic">
+      📖 Open Semantic Scholar
+    </button>
+    <div class="sp-side-hint" data-i18n="sp-side-hint">Opens snapped to the right side of your screen</div>
+
+    <hr class="sp-divider">
+
+    <div class="sp-steps-title" data-i18n="sp-steps-title">How to get BibTeX</div>
+    <div class="sp-steps" id="sp-steps">
+      <!-- populated by JS based on active tab -->
+    </div>
+
+    <div class="sp-url-row">
+      <div class="sp-url-display" id="sp-url-display"></div>
+      <button class="sp-copy-btn" onclick="copySearchUrl()" data-i18n="sp-copy">Copy URL</button>
     </div>
   </div>
 </div>
@@ -381,10 +409,15 @@ const I18N = {
     'btn-prev':           '← Prev',
     'btn-next':           'Next →',
     'btn-undo':           '↩ Undo',
-    'sp-open-tab':        '↗ New Tab',
-    'sp-open-new':        'Open in New Tab',
-    'sp-blocked-scholar': 'Google Scholar blocks embedding.\nClick below to open in a new tab.',
-    'sp-blocked-semantic':'Semantic Scholar blocks embedding.\nClick below to open in a new tab.',
+    'sp-panel-title':     '🔍 Search Reference',
+    'sp-searching':       'Searching for',
+    'sp-open-scholar':    '🔍 Open Google Scholar',
+    'sp-open-semantic':   '📖 Open Semantic Scholar',
+    'sp-side-hint':       'Opens snapped to the right side of your screen',
+    'sp-steps-title':     'How to get BibTeX',
+    'sp-copy':            'Copy URL',
+    'sp-steps-scholar':   ['Search and find your paper', 'Click "Cite" (") below the result', 'Click "BibTeX" → copy the text', 'Paste it in the box on the left'],
+    'sp-steps-semantic':  ['Search and find your paper', 'Click "Cite" on the paper page', 'Select "BibTeX" format → copy', 'Paste it in the box on the left'],
     'badge-hint':         'Click to mark as checked / uncheck',
     'diff-title':         'Differences',
     'diff-same':          '✅ No differences — content is identical',
@@ -398,6 +431,7 @@ const I18N = {
     'toast-downloading':  'Downloading main.bib',
     'toast-undo':         '↩ Undone',
     'toast-no-undo':      'Nothing to undo',
+    'toast-copied-url':   'URL copied to clipboard',
     'stats-pending':      n => `⏳ ${n} pending`,
     'stats-ok':           n => `✅ ${n} ok`,
     'stats-replaced':     n => `🔄 ${n} replaced`,
@@ -421,10 +455,15 @@ const I18N = {
     'btn-prev':           '← 上一条',
     'btn-next':           '下一条 →',
     'btn-undo':           '↩ 撤销',
-    'sp-open-tab':        '↗ 新标签页',
-    'sp-open-new':        '在新标签页打开',
-    'sp-blocked-scholar': 'Google 学术禁止嵌入显示。\n请点击下方在新标签页中打开。',
-    'sp-blocked-semantic':'Semantic Scholar 禁止嵌入显示。\n请点击下方在新标签页中打开。',
+    'sp-panel-title':     '🔍 检索参考文献',
+    'sp-searching':       '正在搜索',
+    'sp-open-scholar':    '🔍 打开 Google 学术',
+    'sp-open-semantic':   '📖 打开 Semantic Scholar',
+    'sp-side-hint':       '在屏幕右侧贴边打开新窗口',
+    'sp-steps-title':     '如何获取 BibTeX',
+    'sp-copy':            '复制链接',
+    'sp-steps-scholar':   ['搜索并找到目标论文', '点击结果下方的"引用"(⟨⟩)', '点击"BibTeX"→ 复制全文', '粘贴到左侧输入框'],
+    'sp-steps-semantic':  ['搜索并找到目标论文', '在论文页点击"Cite"', '选择 BibTeX 格式 → 复制', '粘贴到左侧输入框'],
     'badge-hint':         '点击标记为已核查 / 取消标记',
     'diff-title':         '差异对比',
     'diff-same':          '✅ 内容相同，无差异',
@@ -438,6 +477,7 @@ const I18N = {
     'toast-downloading':  '正在下载 main.bib',
     'toast-undo':         '↩ 已撤销',
     'toast-no-undo':      '没有可撤销的操作',
+    'toast-copied-url':   '链接已复制到剪贴板',
     'stats-pending':      n => `⏳ ${n} 待检查`,
     'stats-ok':           n => `✅ ${n} 已确认`,
     'stats-replaced':     n => `🔄 ${n} 已替换`,
@@ -777,8 +817,9 @@ function updateDiffView() {
   diffEl.style.display = 'block';
 }
 
-// ── Search side panel (画中画) ────────────────────────────────────
+// ── Search side panel (画中画 launcher) ───────────────────────────
 let currentSearchTab = 'scholar';
+let _sideWindow = null;
 
 function getSearchUrl(service) {
   if (currentIdx < 0) return '';
@@ -791,68 +832,70 @@ function getSearchUrl(service) {
 function openSearch(service) {
   if (currentIdx < 0) return;
   currentSearchTab = service;
-  document.getElementById('sp-tab-scholar').classList.toggle('active',  service === 'scholar');
-  document.getElementById('sp-tab-semantic').classList.toggle('active', service === 'semantic');
-  loadSearchPanel(service);
+  updateSearchPanel(service);
   document.getElementById('search-panel').classList.add('open');
   document.getElementById('sp-overlay').classList.add('show');
 }
 
 function switchTab(service) {
-  if (currentIdx < 0) return;
   currentSearchTab = service;
-  document.getElementById('sp-tab-scholar').classList.toggle('active',  service === 'scholar');
-  document.getElementById('sp-tab-semantic').classList.toggle('active', service === 'semantic');
-  loadSearchPanel(service);
+  updateSearchPanel(service);
 }
 
-function loadSearchPanel(service) {
+function updateSearchPanel(service) {
   const url = getSearchUrl(service);
-  const title = service === 'scholar' ? t('btn-scholar') : t('btn-semantic');
+  const e = entries[currentIdx];
 
-  document.getElementById('sp-title').textContent = title;
-  document.getElementById('sp-url-text').textContent = url;
-  document.getElementById('sp-open-tab').href = url;
-  document.getElementById('sp-blocked-link').href = url;
+  // Tabs
+  document.getElementById('sp-tab-scholar').classList.toggle('active',  service === 'scholar');
+  document.getElementById('sp-tab-semantic').classList.toggle('active', service === 'semantic');
 
-  // Show blocked overlay immediately (Scholar/SS block iframes)
-  // and let the iframe try anyway; if it loads, hide the overlay.
-  const blocked = document.getElementById('sp-blocked');
-  const iframe  = document.getElementById('search-iframe');
+  // Paper title
+  document.getElementById('sp-paper-title').textContent = e ? e.title : '';
 
-  const blockedMsg = service === 'scholar' ? t('sp-blocked-scholar') : t('sp-blocked-semantic');
-  document.getElementById('sp-blocked-msg').textContent = blockedMsg;
+  // Primary action button
+  document.getElementById('sp-side-scholar-btn').style.display  = service === 'scholar'  ? '' : 'none';
+  document.getElementById('sp-side-semantic-btn').style.display = service === 'semantic' ? '' : 'none';
 
-  // Reset iframe first
-  iframe.src = '';
-  blocked.classList.remove('show');
+  // URL bar
+  document.getElementById('sp-url-display').textContent = url;
 
-  // Delay slightly then load — if it fails (X-Frame-Options), show fallback
-  let loadTimer = setTimeout(() => { blocked.classList.add('show'); }, 2500);
+  // Steps
+  const steps = t('sp-steps-' + service);
+  const stepsHtml = steps.map((s, i) =>
+    `<div class="sp-step"><div class="sp-step-num">${i+1}</div><div>${s}</div></div>`
+  ).join('');
+  document.getElementById('sp-steps').innerHTML = stepsHtml;
+}
 
-  iframe.onload = function() {
-    clearTimeout(loadTimer);
-    try {
-      // Try to access contentDocument — throws if cross-origin blocked
-      const doc = iframe.contentDocument || iframe.contentWindow.document;
-      if (!doc || doc.URL === 'about:blank') {
-        blocked.classList.add('show');
-      } else {
-        blocked.classList.remove('show');
-      }
-    } catch(e) {
-      blocked.classList.add('show');
-    }
-  };
+function openSideWindow(service) {
+  const url = getSearchUrl(service);
+  if (!url) return;
+  const w = 700;
+  const h = screen.availHeight;
+  const left = screen.availLeft + Math.max(0, screen.availWidth - w);
+  const top  = screen.availTop;
+  // Reuse same window if it's still open
+  if (_sideWindow && !_sideWindow.closed) {
+    _sideWindow.location.href = url;
+    _sideWindow.focus();
+  } else {
+    _sideWindow = window.open(
+      url, 'bib_search_panel',
+      `width=${w},height=${h},left=${left},top=${top},resizable=yes,scrollbars=yes,toolbar=yes`
+    );
+  }
+}
 
-  iframe.src = url;
+function copySearchUrl() {
+  const url = getSearchUrl(currentSearchTab);
+  if (!url) return;
+  navigator.clipboard.writeText(url).then(() => showToast(t('toast-copied-url')));
 }
 
 function closeSearchPanel() {
   document.getElementById('search-panel').classList.remove('open');
   document.getElementById('sp-overlay').classList.remove('show');
-  // Clear iframe to stop loading
-  setTimeout(() => { document.getElementById('search-iframe').src = ''; }, 350);
 }
 
 // ── Actions ───────────────────────────────────────────────────────
