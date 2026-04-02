@@ -420,6 +420,12 @@ header {
 <div class="toast" id="toast"></div>
 
 <script>
+window.onerror = (msg, src, line) => {
+  console.error('Page error:', msg, 'line', line);
+  const el = document.getElementById('toast');
+  if (el) { el.textContent = `JS错误 L${line}: ${msg}`; el.classList.add('show'); }
+};
+
 // ── State ──────────────────────────────────────────────────────
 let entries    = [];
 let currentIdx = -1;
@@ -691,11 +697,19 @@ function autoFetchBib() {
   setStep(1, 'active');
   setFetchStatus('', '<span class="spinner"></span> 正在打开 Google Scholar…');
   const url = `https://scholar.google.com/scholar?q=${encodeURIComponent(entries[currentIdx].title)}&bib-checker=1&bib-delay=${fetchDelay}`;
-  chrome.runtime.sendMessage({ type: 'bib-ext-open-scholar', url }, () => {
-    setStep(1, 'done');
-    setStep(2, 'active');
-    setFetchStatus('', '<span class="spinner"></span> 等待扩展点击 Cite…');
-  });
+  try {
+    chrome.runtime.sendMessage({ type: 'bib-ext-open-scholar', url }, () => {
+      if (chrome.runtime.lastError) {
+        setFetchStatus('error', '❌ 扩展通信失败，请重新加载扩展页面');
+        return;
+      }
+      setStep(1, 'done');
+      setStep(2, 'active');
+      setFetchStatus('', '<span class="spinner"></span> 等待扩展点击 Cite…');
+    });
+  } catch(e) {
+    setFetchStatus('error', '❌ 无法连接扩展后台，请在扩展页面中使用');
+  }
 }
 
 // ── Actions ────────────────────────────────────────────────────
@@ -786,7 +800,7 @@ function showToast(msg) {
 }
 
 // ── Extension messages ─────────────────────────────────────────
-chrome.runtime.onMessage.addListener((msg) => {
+try { chrome.runtime.onMessage.addListener((msg) => {
   if (msg.type === 'scholar-progress') {
     for (let i = 1; i < msg.step; i++) setStep(i, 'done');
     setStep(msg.step, 'active');
@@ -813,7 +827,7 @@ chrome.runtime.onMessage.addListener((msg) => {
       }
     }, 400);
   }
-});
+}); } catch(e) { console.warn('chrome.runtime not available:', e); }
 
 // ── Keyboard shortcuts ─────────────────────────────────────────
 document.addEventListener('keydown', e => {
