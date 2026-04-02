@@ -401,6 +401,56 @@ a.install-code:hover { background: rgba(79,70,229,.2); }
   .problem-grid, .features-grid { grid-template-columns: 1fr; }
   .steps { grid-template-columns: 1fr; }
 }
+
+@media (max-width: 768px) {
+  /* Nav — hide text links, keep logo + lang + CTA */
+  .nav-link { display: none; }
+  nav { padding: 12px 16px; gap: 8px; }
+  .nav-cta { font-size: 12px; padding: 6px 12px; }
+  .lang-toggle { font-size: 11px; padding: 4px 8px; }
+
+  /* Hero */
+  .hero { padding: 90px 0 56px; min-height: unset; }
+  .hero-sub { font-size: .95rem; }
+  .hero-btns { gap: 10px; }
+  .btn-primary, .btn-secondary { font-size: 13px; padding: 11px 18px; }
+
+  /* Sections */
+  .problem, .how, .features { padding: 64px 0; }
+  .cta-section { padding: 64px 0; }
+  .venues { padding: 48px 0; }
+  .steps { margin-top: 36px; }
+  .features-grid, .problem-grid { margin-top: 36px; gap: 14px; }
+
+  /* Install — git clone overflows on narrow screens */
+  .install-code {
+    word-break: break-all;
+    white-space: normal;
+    display: block;
+    font-size: 11px;
+  }
+  .install-step { padding: 14px 16px; }
+
+  /* Fake-cite label */
+  .fake-cite::before { font-size: 7px; top: 5px; right: 6px; }
+  .fake-cite { font-size: 10px; }
+
+  /* CTA buttons */
+  .cta-section .hero-btns { flex-direction: column; align-items: center; }
+}
+
+@media (max-width: 480px) {
+  .container { padding: 0 16px; }
+  .hero { padding: 80px 0 48px; }
+  .hero-btns { flex-direction: column; }
+  .btn-primary, .btn-secondary { width: 100%; justify-content: center; }
+  .section-title { font-size: 1.6rem; }
+  .hero-title { letter-spacing: -.02em; }
+  .feat-card, .problem-card { padding: 18px; }
+  .install-step { gap: 12px; }
+  .install-num { width: 28px; height: 28px; font-size: 13px; }
+  footer .footer-links { flex-direction: column; gap: 10px; align-items: center; }
+}
 </style>
 </head>
 <body lang-mode="en">
