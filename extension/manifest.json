@@ -1,10 +1,10 @@
 {
   "manifest_version": 3,
-  "name": "DeHallucinate Reference Checker",
+  "name": "BibTeX Checker",
   "version": "2.0",
   "description": "Catch AI-hallucinated references in your BibTeX. Auto-fetches from Google Scholar and shows a field-by-field diff so you can fix fake citations before submission.",
   "action": {
-    "default_title": "DeHallucinate Reference Checker",
+    "default_title": "BibTeX Checker",
     "default_icon": {
       "16":  "icons/icon16.png",
       "32":  "icons/icon32.png",
