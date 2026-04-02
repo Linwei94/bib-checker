@@ -532,10 +532,10 @@ function setBatchSteps(active) {
 }
 
 function updateBatchProgress() {
-  const done    = entries.filter(e => e.fetchStatus === 'done').length;
-  const error   = entries.filter(e => e.fetchStatus === 'error').length;
+  const done     = entries.filter(e => e.fetchStatus === 'done').length;
+  const error    = entries.filter(e => e.fetchStatus === 'error').length;
   const fetching = entries.filter(e => e.fetchStatus === 'fetching').length;
-  const total   = entries.length;
+  const total    = entries.length;
   const el = document.getElementById('batch-progress');
   if (!el) return;
   if (total === 0) { el.textContent = ''; return; }
@@ -543,6 +543,14 @@ function updateBatchProgress() {
   if (error > 0) txt += `，${error} 失败`;
   if (fetching > 0) txt += `，正在获取…`;
   el.textContent = txt;
+
+  // Show "全部替换" only when there are unreviewed fetched results and not currently batch-fetching
+  const pending = entries.filter(e => e.fetchStatus === 'done' && e.reviewStatus === 'pending').length;
+  const btn = document.getElementById('replace-all-btn');
+  if (btn) {
+    btn.style.display = (!batchRunning && pending > 0) ? '' : 'none';
+    btn.textContent = `⚡ 全部替换 (${pending})`;
+  }
 }
 
 // ── Message from Scholar content script ───────────────────────
@@ -564,6 +572,44 @@ try { chrome.runtime.onMessage.addListener((msg) => {
     }
   }
 }); } catch (e) { console.warn('chrome.runtime not available:', e); }
+
+// ── Replace all ────────────────────────────────────────────────
+function replaceAll() {
+  const toReplace = entries.filter(e =>
+    e.fetchStatus === 'done' && e.fetchResult && e.reviewStatus === 'pending'
+  );
+  if (toReplace.length === 0) { showToast('没有可替换的条目'); return; }
+
+  pushHistory();
+  const keepKey = document.getElementById('keep-key').checked;
+  let text = document.getElementById('bib-textarea').value;
+  let count = 0;
+
+  for (const e of toReplace) {
+    let newBib = e.fetchResult.trim();
+    if (keepKey) newBib = newBib.replace(/^(@\w+\s*\{\s*)[\w:._\-]+/, `$1${e.key}`);
+    const re = new RegExp('@\\w+\\s*\\{\\s*' + escapeRe(e.key) + '\\s*,', 'i');
+    const m = re.exec(text);
+    if (!m) continue;
+    let depth = 0, ii = m.index;
+    for (; ii < text.length; ii++) {
+      if (text[ii] === '{') depth++;
+      else if (text[ii] === '}') { depth--; if (depth === 0) { ii++; break; } }
+    }
+    text = text.slice(0, m.index) + newBib + text.slice(ii);
+    count++;
+  }
+
+  document.getElementById('bib-textarea').value = text;
+  saveBib();
+  reparsePreservingState();
+  const keys = new Set(toReplace.map(e => e.key));
+  entries.forEach(e => { if (keys.has(e.key)) e.reviewStatus = 'replaced'; });
+  renderEntryList();
+  updateBatchProgress();
+  if (currentIdx >= 0 && entries[currentIdx].fetchStatus === 'done') renderDiff(currentIdx);
+  showToast(`✅ 已替换 ${count} 条`);
+}
 
 // ── Actions: replace / keep ────────────────────────────────────
 function replaceEntry() {
@@ -803,6 +849,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('undo-btn').addEventListener('click', undoState);
   document.getElementById('batch-start-btn').addEventListener('click', startBatchFetch);
   document.getElementById('batch-stop-btn').addEventListener('click', stopBatchFetch);
+  document.getElementById('replace-all-btn').addEventListener('click', replaceAll);
   document.getElementById('replace-btn').addEventListener('click', replaceEntry);
   document.getElementById('keep-btn').addEventListener('click', keepEntry);
   document.getElementById('diff-prev-btn').addEventListener('click', goPrevDiff);

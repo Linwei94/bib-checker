@@ -322,6 +322,13 @@ header {
 }
 .btn-replace:hover { opacity: .85; }
 .btn-replace:disabled, .btn-keep:disabled { opacity: .4; cursor: not-allowed; }
+.btn-replace-all {
+  background: #059669; color: white; border: none; border-radius: 6px;
+  padding: 5px 14px; font-size: 12px; font-weight: 700; cursor: pointer;
+  white-space: nowrap; transition: opacity .15s;
+  box-shadow: 0 1px 5px rgba(5,150,105,.35);
+}
+.btn-replace-all:hover { opacity: .85; }
 @keyframes btnFlash {
   0%   { transform: scale(1); }
   40%  { transform: scale(1.08); }
@@ -386,6 +393,7 @@ header {
         <span class="bs-arrow">›</span>
         <div class="bs-dot" id="bs4"></div>
       </div>
+      <button class="btn-replace-all" id="replace-all-btn" style="display:none">⚡ 全部替换</button>
       <div class="delay-wrap">
         <span>间隔</span>
         <select id="delay-select">
