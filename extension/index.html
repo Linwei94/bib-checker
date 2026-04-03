@@ -144,17 +144,21 @@ header {
 }
 .btn-stop:hover { opacity: .85; }
 .batch-progress { font-size: 11px; color: #64748b; white-space: nowrap; }
-.batch-steps { display: flex; align-items: center; gap: 3px; margin-left: 4px; }
-.bs-dot {
-  width: 8px; height: 8px; border-radius: 50%;
-  background: #e2e8f0; transition: background .25s; flex-shrink: 0;
+.batch-steps { display: flex; align-items: center; gap: 2px; margin-left: 4px; }
+.bs-step {
+  font-size: 10px; color: #94a3b8; background: #f1f5f9;
+  border-radius: 20px; padding: 2px 7px; white-space: nowrap;
+  transition: background .2s, color .2s;
 }
-.bs-dot.active { background: #3b82f6; animation: bspulse .8s ease-in-out infinite; }
-.bs-dot.done   { background: #10b981; }
+.bs-step.active {
+  background: #eff6ff; color: #3b82f6; font-weight: 700;
+  animation: bspulse .9s ease-in-out infinite;
+}
+.bs-step.done { background: #f0fdf4; color: #10b981; }
 @keyframes bspulse {
-  0%,100% { opacity: 1; } 50% { opacity: .4; }
+  0%,100% { opacity: 1; } 50% { opacity: .45; }
 }
-.bs-arrow { font-size: 9px; color: #e2e8f0; }
+.bs-arrow { font-size: 9px; color: #cbd5e1; }
 .delay-wrap { margin-left: auto; display: flex; align-items: center; gap: 5px; font-size: 11px; color: #94a3b8; white-space: nowrap; }
 .delay-wrap select {
   background: #f8fafc; color: #475569; border: 1px solid #e2e8f0;
@@ -396,13 +400,13 @@ header {
       <button class="btn-stop" id="batch-stop-btn" style="display:none">■ 停止</button>
       <span class="batch-progress" id="batch-progress"></span>
       <div class="batch-steps" id="batch-steps" style="display:none">
-        <div class="bs-dot" id="bs1"></div>
+        <div class="bs-step" id="bs1">打开 Scholar</div>
         <span class="bs-arrow">›</span>
-        <div class="bs-dot" id="bs2"></div>
+        <div class="bs-step" id="bs2">点击 Cite</div>
         <span class="bs-arrow">›</span>
-        <div class="bs-dot" id="bs3"></div>
+        <div class="bs-step" id="bs3">点击 BibTeX</div>
         <span class="bs-arrow">›</span>
-        <div class="bs-dot" id="bs4"></div>
+        <div class="bs-step" id="bs4">下载内容</div>
       </div>
       <button class="btn-replace-all" id="replace-all-btn" style="display:none">⚡ 全部替换</button>
       <div class="delay-wrap">

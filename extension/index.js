@@ -563,13 +563,13 @@ function storeFetchResult(bib) {
 }
 
 function setBatchSteps(active) {
-  // active = 0 (none), 1 (scholar), 2 (cite), 3 (bibtex), 4 (fetch)
+  // active = 0 (none), 1 (打开Scholar), 2 (点击Cite), 3 (点击BibTeX), 4 (下载内容)
   for (let i = 1; i <= 4; i++) {
-    const dot = document.getElementById('bs' + i);
-    if (!dot) continue;
-    if (i < active) dot.className = 'bs-dot done';
-    else if (i === active) dot.className = 'bs-dot active';
-    else dot.className = 'bs-dot';
+    const el = document.getElementById('bs' + i);
+    if (!el) continue;
+    if (i < active) el.className = 'bs-step done';
+    else if (i === active) el.className = 'bs-step active';
+    else el.className = 'bs-step';
   }
 }
 
