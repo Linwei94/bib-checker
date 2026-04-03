@@ -417,19 +417,38 @@ function updateDiffNavCounter() {
   document.getElementById('diff-next-btn').disabled = hasDiffEntries.length === 0;
 }
 
-// ── Batch hint (remaining time + mouse warning) ────────────────
+// ── Batch hint (remaining time + progress bar + mouse warning) ──
 const OVERHEAD_PER_ENTRY = 8; // seconds of Scholar load/process beyond delay
+let batchRemainingSeconds = 0;
 
 function fmtSecs(s) {
   const m = Math.floor(s / 60);
   return m > 0 ? `${m} 分 ${s % 60} 秒` : `${s} 秒`;
 }
 
+function calibrateBatchHint() {
+  const remaining = batchQueue.length - batchPos;
+  batchRemainingSeconds = Math.max(remaining, 0) * (fetchDelay * 2 + OVERHEAD_PER_ENTRY);
+}
+
+function renderBatchHint() {
+  const timeEl = document.getElementById('batch-hint-time');
+  const fill   = document.getElementById('batch-progress-fill');
+  if (timeEl) timeEl.textContent = batchRemainingSeconds > 0 ? fmtSecs(batchRemainingSeconds) : '即将完成…';
+  if (fill && batchQueue.length > 0) {
+    fill.style.width = (batchPos / batchQueue.length * 100).toFixed(1) + '%';
+  }
+}
+
 function startBatchHint() {
+  calibrateBatchHint();
   const bar = document.getElementById('batch-hint-bar');
   if (bar) bar.style.display = 'flex';
-  updateBatchHint();
-  batchHintInterval = setInterval(updateBatchHint, 1000);
+  renderBatchHint();
+  batchHintInterval = setInterval(() => {
+    if (batchRemainingSeconds > 0) batchRemainingSeconds--;
+    renderBatchHint();
+  }, 1000);
 }
 
 function stopBatchHint() {
@@ -439,13 +458,10 @@ function stopBatchHint() {
   if (bar) bar.style.display = 'none';
 }
 
-function updateBatchHint() {
-  const el = document.getElementById('batch-hint-time');
-  if (!el) return;
-  const remaining = batchQueue.length - batchPos;
-  if (remaining <= 0) { el.textContent = '即将完成…'; return; }
-  const secs = remaining * (fetchDelay * 2 + OVERHEAD_PER_ENTRY);
-  el.textContent = fmtSecs(secs);
+// Call when a new entry starts to keep estimate accurate
+function recalibrateBatchHint() {
+  calibrateBatchHint();
+  renderBatchHint();
 }
 
 // ── Batch fetch ────────────────────────────────────────────────
@@ -508,6 +524,7 @@ function fetchNext() {
     }
   }
   updateBatchProgress();
+  recalibrateBatchHint();
   setBatchSteps(1);
 
   const url = `https://scholar.google.com/scholar?q=${encodeURIComponent(e.title)}&bib-checker=1&bib-delay=${fetchDelay}`;

@@ -160,12 +160,20 @@ header {
 }
 .bs-arrow { font-size: 9px; color: #cbd5e1; }
 .batch-hint-bar {
-  display: none; align-items: center; gap: 6px;
-  padding: 5px 12px; font-size: 11px;
+  display: none; flex-direction: column; gap: 4px;
+  padding: 5px 12px 6px; font-size: 11px;
   background: #fefce8; border-bottom: 1px solid #fde68a; color: #92400e;
 }
-.batch-hint-bar .hint-time { font-weight: 700; color: #b45309; min-width: 54px; }
+.batch-hint-row { display: flex; align-items: center; gap: 6px; }
+.batch-hint-bar .hint-time { font-weight: 700; color: #b45309; min-width: 60px; }
 .batch-hint-bar .hint-sep  { color: #fbbf24; }
+.batch-prog-track {
+  width: 100%; height: 4px; background: #fde68a; border-radius: 2px; overflow: hidden;
+}
+.batch-prog-fill {
+  height: 100%; width: 0%; background: #f59e0b;
+  border-radius: 2px; transition: width .4s ease;
+}
 .delay-wrap { margin-left: auto; display: flex; align-items: center; gap: 5px; font-size: 11px; color: #94a3b8; white-space: nowrap; }
 .delay-wrap select {
   background: #f8fafc; color: #475569; border: 1px solid #e2e8f0;
@@ -403,9 +411,12 @@ header {
 
     <!-- Batch hint bar -->
     <div class="batch-hint-bar" id="batch-hint-bar">
-      <span>预计剩余</span><span class="hint-time" id="batch-hint-time">—</span>
-      <span class="hint-sep">·</span>
-      <span>操作期间请勿移动鼠标</span>
+      <div class="batch-prog-track"><div class="batch-prog-fill" id="batch-progress-fill"></div></div>
+      <div class="batch-hint-row">
+        <span>预计剩余</span><span class="hint-time" id="batch-hint-time">—</span>
+        <span class="hint-sep">·</span>
+        <span>操作期间请勿移动鼠标</span>
+      </div>
     </div>
     <!-- Batch fetch control bar -->
     <div class="fetch-bar" id="fetch-bar">
