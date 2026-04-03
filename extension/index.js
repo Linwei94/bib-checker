@@ -550,11 +550,8 @@ function storeFetchResult(bib) {
   updateEntryRow(idx);
   updateBatchProgress();
 
-  // If this entry is currently viewed, switch to diff panel
-  if (currentIdx === idx) {
-    renderDiff(idx);
-    showReviewArea('diff');
-  }
+  // Always switch to the newly fetched entry's diff
+  selectEntry(idx);
 
   batchPos++;
   if (batchRunning) {
