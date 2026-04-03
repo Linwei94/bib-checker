@@ -89,7 +89,7 @@ async function run() {
   cite.classList.add('bib-highlight');
   cite.scrollIntoView({ behavior: 'smooth', block: 'center' });
   chrome.runtime.sendMessage({ type: 'scholar-progress', step: 2 });
-  setMsg('Step 1 / 2 &nbsp;—&nbsp; 即将点击 <b>Cite</b> 按钮', true);
+  setMsg('Step 1 / 2 &nbsp;—&nbsp; 即将点击 <b>Cite</b> 按钮 &nbsp;·&nbsp; 请勿移动鼠标', true);
   await countdown(_bibDelay);
   if (cancelled) return;
 
@@ -115,7 +115,7 @@ async function run() {
 
   bib.classList.add('bib-highlight');
   chrome.runtime.sendMessage({ type: 'scholar-progress', step: 3 });
-  setMsg('Step 2 / 2 &nbsp;—&nbsp; 即将点击 <b>BibTeX</b> 链接', true);
+  setMsg('Step 2 / 2 &nbsp;—&nbsp; 即将点击 <b>BibTeX</b> 链接 &nbsp;·&nbsp; 请勿移动鼠标', true);
   await countdown(_bibDelay);
   if (cancelled) return;
 

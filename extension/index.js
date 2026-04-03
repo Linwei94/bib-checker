@@ -18,6 +18,7 @@ let batchRunning  = false;
 let batchQueue    = [];   // indices to fetch
 let batchPos      = 0;
 let fetchTimeoutId = null;  // safety timeout for hung Scholar tab
+let batchHintInterval = null;
 
 let fetchDelay = parseInt(localStorage.getItem('bib-fetch-delay') || '3');
 
@@ -416,6 +417,37 @@ function updateDiffNavCounter() {
   document.getElementById('diff-next-btn').disabled = hasDiffEntries.length === 0;
 }
 
+// ── Batch hint (remaining time + mouse warning) ────────────────
+const OVERHEAD_PER_ENTRY = 8; // seconds of Scholar load/process beyond delay
+
+function fmtSecs(s) {
+  const m = Math.floor(s / 60);
+  return m > 0 ? `${m} 分 ${s % 60} 秒` : `${s} 秒`;
+}
+
+function startBatchHint() {
+  const bar = document.getElementById('batch-hint-bar');
+  if (bar) bar.style.display = 'flex';
+  updateBatchHint();
+  batchHintInterval = setInterval(updateBatchHint, 1000);
+}
+
+function stopBatchHint() {
+  clearInterval(batchHintInterval);
+  batchHintInterval = null;
+  const bar = document.getElementById('batch-hint-bar');
+  if (bar) bar.style.display = 'none';
+}
+
+function updateBatchHint() {
+  const el = document.getElementById('batch-hint-time');
+  if (!el) return;
+  const remaining = batchQueue.length - batchPos;
+  if (remaining <= 0) { el.textContent = '即将完成…'; return; }
+  const secs = remaining * (fetchDelay * 2 + OVERHEAD_PER_ENTRY);
+  el.textContent = fmtSecs(secs);
+}
+
 // ── Batch fetch ────────────────────────────────────────────────
 function startBatchFetch() {
   if (batchRunning) return;
@@ -427,6 +459,7 @@ function startBatchFetch() {
   document.getElementById('batch-stop-btn').style.display = '';
   document.getElementById('batch-steps').style.display = 'flex';
   setBatchSteps(0);
+  startBatchHint();
   fetchNext();
 }
 
@@ -436,6 +469,7 @@ function stopBatchFetch() {
   document.getElementById('batch-stop-btn').style.display = 'none';
   document.getElementById('batch-steps').style.display = 'none';
   setBatchSteps(0);
+  stopBatchHint();
   // Reset any "fetching" entry back to pending
   entries.forEach(e => { if (e.fetchStatus === 'fetching') e.fetchStatus = 'pending'; });
   renderEntryList();
@@ -451,6 +485,7 @@ function fetchNext() {
     document.getElementById('batch-stop-btn').style.display = 'none';
     document.getElementById('batch-steps').style.display = 'none';
     setBatchSteps(0);
+    stopBatchHint();
     updateBatchProgress();
     const remaining = entries.filter(e => e.fetchStatus === 'pending').length;
     showToast(remaining === 0 ? '🎉 所有条目获取完毕！' : `批量获取完成，${remaining} 条跳过/失败`);
@@ -522,6 +557,7 @@ function retryEntry(idx) {
   document.getElementById('batch-stop-btn').style.display = '';
   document.getElementById('batch-steps').style.display = 'flex';
   setBatchSteps(0);
+  startBatchHint();
   fetchNext();
 }
 
