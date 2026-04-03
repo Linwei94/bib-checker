@@ -30,8 +30,21 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   // Open a Scholar tab (called by index.html); remember caller so we can return results
   if (msg.type === 'bib-ext-open-scholar') {
     bibCheckerTabId = sender.tab?.id ?? bibCheckerTabId;
-    chrome.tabs.create({ url: msg.url });
+    chrome.tabs.create({ url: msg.url, active: false });
     sendResponse({ ok: true });  // must respond or Chrome fires lastError in caller
+    return false;
+  }
+
+  // Open Scholar in split view for manual search (called by index.html)
+  if (msg.type === 'bib-ext-open-scholar-split') {
+    const createOpts = { url: msg.url, openerTabId: sender.tab?.id };
+    chrome.tabs.create(createOpts, (tab) => {
+      // Use Chrome's split tab API if available (Chrome 131+)
+      if (chrome.tabs.split) {
+        chrome.tabs.split(tab.id, { opener: sender.tab?.id }, () => {});
+      }
+    });
+    sendResponse({ ok: true });
     return false;
   }
 

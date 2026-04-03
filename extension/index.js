@@ -499,7 +499,11 @@ function fetchNext() {
 function openScholarSearch(idx) {
   const e = entries[idx];
   const url = `https://scholar.google.com/scholar?q=${encodeURIComponent(e.title)}`;
-  window.open(url, '_blank');
+  chrome.runtime.sendMessage({ type: 'bib-ext-open-scholar-split', url }, (resp) => {
+    if (chrome.runtime.lastError || !resp?.ok) {
+      window.open(url, '_blank'); // fallback
+    }
+  });
 }
 
 function retryEntry(idx) {
